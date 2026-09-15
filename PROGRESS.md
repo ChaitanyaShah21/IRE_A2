@@ -6,8 +6,9 @@
 
 ## Where we are right now
 
-**Phase A0 complete** — repository migrated from A1 and verified. A2's work has not
-started yet. **Next: Phase A1, the EB-NeRD data scale-up (D33).**
+**Phase A1 in progress** — data scale-up. D33 is decided and verified (5% of
+`ebnerd_large` users, `user_id % 100 < 5`), and the testset embeddings are confirmed
+reusable. **Next: implement the sample in ingestion and rebuild the store.**
 
 A1 is finished and frozen at `/home/csharp/IRE/A1` (tag `phase-5-complete`). This repo is
 a clone of it with full history and all six A1 tags, so every A1 module, decision and
@@ -116,14 +117,15 @@ excludes zero. `ebnerd_large` (3.4 GB, 12,063,890 train + 12,566,385 validation
 impressions, 125,541 articles) is already on disk.
 
 Concretely, in order:
-1. **Check before computing:** are `ebnerd_large/articles.parquet` and the testset's
-   articles the same 125,541 rows? If so the embeddings in `data/processed/submission/`
-   are reusable and **~18 minutes of CPU is saved**.
-2. **D33 — the subsample design.** A genuine R6 fork: sample size, and user-level versus
-   impression-level. It must be **user-level and seeded**, or a sampled user's history and
-   impressions drift out of sync — but the size is a real trade-off against both runtime
-   and the width of the Q3 confidence interval, so it gets presented.
-3. Rebuild the store, re-run the temporal split, re-assert `train_max < val_min < test_min`.
+1. ✅ **Checked:** `ebnerd_large/articles.parquet` and the testset's articles are
+   **frame-equal** (same 125,541 rows and schema, compared after sorting). The embeddings
+   in `data/processed/submission/embeddings_ebnerd.parquet` are reusable, which saves
+   ~18 min of CPU.
+2. ✅ **D33 decided:** 5% of users, `user_id % 100 < 5` → 48,666 users, 597,348 train +
+   622,398 validation impressions. Uniformity of the ID residues and the history
+   completeness were both verified. Full record in `ARCHITECTURE.md`.
+3. **Next:** implement the sample in ingestion (a config key, not a hard-coded constant),
+   point EB-NeRD at `ebnerd_large`, and reuse the testset embeddings. Then rebuild the store, re-run the temporal split, re-assert `train_max < val_min < test_min`.
 4. R10 checks at the new scale: no sampled user has an orphaned history row, and every
    impression's user is in the sampled set.
 

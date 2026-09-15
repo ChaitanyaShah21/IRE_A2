@@ -456,3 +456,25 @@ all score a flat zero, where stable ordering hands rank 1 to position 0 every ti
 The habit being practised: **an anomaly is not evidence until its null model has been
 computed.** Phase 3's "a number moving in the direction you wanted never tells you why"
 is the same lesson from the opposite side.
+
+---
+
+# Assignment 2
+
+## Phase A1 — data scale-up (2026-09-15)
+
+### Taught in chat, while deciding D33
+- **CI width scales with 1/√n.** Used to turn A1's measured ±0.005 on 17,749 EB-NeRD
+  impressions into estimates for each candidate sample size (±0.0016 / ±0.001 / ±0.0006).
+  Also that a *paired* bootstrap is narrower than an unpaired one, because both systems
+  are scored on the same impressions. Stated only; taught fully before Phase A4.
+- **User-level versus impression-level sampling**, and why only the first keeps a user's
+  history consistent with their impressions.
+- **Seeded random sample versus `user_id % 100 < p`.** Reproducibility across library
+  versions, and nesting.
+
+**Chaitanya chose** 5% and modulo selection, both the recommended options.
+
+**No comprehension check asked yet.** The R5 recall quiz on A0 was skipped, because A0
+was migration mechanics with no new concept. Owed at the end of A1: why the modulo rule
+needed the χ² check, and why tripling the sample does not cut the CI by three.
