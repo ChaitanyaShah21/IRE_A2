@@ -208,6 +208,23 @@ Disk: 64 GB used, 892 GB free. Not a constraint.
 
 ---
 
+## How A2 will be examined — shape of Quiz-1 (received 2026-09-15)
+
+Quiz-1 spent 70/100 marks on "the system you built", and those answers are cross-checked
+against this repo and the Codabench entries in oral evaluation. Expect the same for A2.
+Every number must trace to a file and a command:
+- **Inventory with sizes:** documents, vocabulary, average tokens, postings, and index
+  size against raw corpus size.
+- **Memory tier** at query time, with the code line that makes it so.
+- **Latency:** p50/p99 per stage at a stated K. Harness throughput (impressions/s) and
+  indexing throughput.
+- **Little's law check:** X ≤ 1/R with N=1, and the mechanisms (batching, precomputed
+  user vectors) with *measured* gains.
+- **Metric formulas**, the ground-truth source, slices, and ablations.
+
+Graded on consistency and mechanism, not on how good the numbers are. Unmeasured means a
+labelled estimate with its reasoning.
+
 ## Open questions
 
 - **D33's subsample size** — to be decided in Phase A1 against measured ingest time and
