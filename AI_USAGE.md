@@ -71,6 +71,10 @@ Chaitanya's `/model` choice) — noted per-commit in git history, not tracked he
 
 | `src/newsrec/eval/ablation.py` | AI-generated | Q9's serving-time ablation (D28). Contains a deliberately leaky function, quarantined and asserted un-imported by a test |
 | `tests/test_ablation.py` | AI-generated | R10 adversarial suite, 14 tests. Mutation-tested: 6 bugs reintroduced, all 6 caught |
+| `src/newsrec/ingest_ebnerd.py` (A2, D33 sample filter) | AI-generated, human-decided | Sample size and the `user_id % 100` mechanism chosen by Chaitanya from measured options |
+| `src/newsrec/build.py`, `scripts/build_pipeline.py` (A2, D33) | AI-generated, human-decided | Repoint-the-existing-config over a second config, chosen by Chaitanya |
+| `configs/ebnerd.yaml` (A2) | AI-generated, human-decided | `raw_root` → `ebnerd_large`, `user_sample_pct: 5` per D33 |
+| `tests/test_user_sample.py` | AI-generated | R10 suite, 11 tests. Mutation-tested: 4 bugs reintroduced; the first run caught 3, and the survivor (`% 10` for `% 100`) exposed a gap in the test data, fixed by adding user 110 |
 | `tests/test_no_leakage.py` | AI-generated | The Q9 deliverable. Mutation-verified: 5 deliberate leaks reintroduced, all 5 caught, including relaxing D19's strict inequality. The EB-NeRD history landmine it tests was found by Chaitanya's earlier D19 discussion insisting availability be label-free as well as temporal |
 | `scripts/run_ablation.py` | AI-generated | Thin entry point for Q9 |
 | `reports/ablation_*.csv` | Generated output | Not authored; reproducible via the script above |

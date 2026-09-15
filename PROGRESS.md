@@ -6,9 +6,9 @@
 
 ## Where we are right now
 
-**Phase A1 in progress** — data scale-up. D33 is decided and verified (5% of
-`ebnerd_large` users, `user_id % 100 < 5`), and the testset embeddings are confirmed
-reusable. **Next: implement the sample in ingestion and rebuild the store.**
+**Phase A1 complete** — the feature store now holds a 5% user sample of `ebnerd_large`
+(D33): 1,219,746 EB-NeRD impressions against the demo's 24,724. 251 tests pass.
+**Next: recall quiz on A1 (R5), then Phase A2 — Q1 behavioural features.**
 
 A1 is finished and frozen at `/home/csharp/IRE/A1` (tag `phase-5-complete`). This repo is
 a clone of it with full history and all six A1 tags, so every A1 module, decision and
@@ -54,8 +54,8 @@ Budget ≈ 22 h across five days. Each phase ends: living-doc update (R12) → c
 | Phase | What | Budget | Status |
 |---|---|---|---|
 | A0 | Migration & setup | 1 h | ✅ done — tag `a2-phase-0-complete` |
-| A1 | Data scale-up: EB-NeRD subsample (D33) | 2 h | ⬜ **next** |
-| A2 | Q1 — behavioural features + boundary contract (D34, D35) | 4 h | ⬜ |
+| A1 | Data scale-up: EB-NeRD subsample (D33) | 2 h | ✅ done — tag `a2-phase-1-complete` |
+| A2 | Q1 — behavioural features + boundary contract (D34, D35) | 4 h | ⬜ **next** |
 | A3 | Q2 — trained re-ranker, two candidate regimes (D36, D37) | 4 h | ⬜ |
 | A4 | Q3 — NRMS baseline, improvement, ablation, paired CI (D38–D40) | 5 h | ⬜ |
 | A5 | Q4 serving/scale + Q5 extended eval + leaderboards | 3 h | ⬜ |
@@ -105,18 +105,7 @@ submissions. These are named requirements, not depth.
 - [x] A1's `PROGRESS.md` archived whole to `archive/A1_PROGRESS.md`; its **error log is
       carried forward inline below**, because R9 requires consulting it before debugging.
 
----
-
-## Next step
-
-**Phase A1 — the EB-NeRD data scale-up (D33).**
-
-The feature store currently holds EB-NeRD **demo**: 1,590 users, 24,724 train impressions.
-That is too thin to train a re-ranker on and far too thin for a paired bootstrap CI that
-excludes zero. `ebnerd_large` (3.4 GB, 12,063,890 train + 12,566,385 validation
-impressions, 125,541 articles) is already on disk.
-
-Concretely, in order:
+### Phase A1 — EB-NeRD data scale-up (2026-09-15)
 1. ✅ **Checked:** `ebnerd_large/articles.parquet` and the testset's articles are
    **frame-equal** (same 125,541 rows and schema, compared after sorting). The embeddings
    in `data/processed/submission/embeddings_ebnerd.parquet` are reusable, which saves
@@ -124,10 +113,37 @@ Concretely, in order:
 2. ✅ **D33 decided:** 5% of users, `user_id % 100 < 5` → 48,666 users, 597,348 train +
    622,398 validation impressions. Uniformity of the ID residues and the history
    completeness were both verified. Full record in `ARCHITECTURE.md`.
-3. **Next:** implement the sample in ingestion (a config key, not a hard-coded constant),
-   point EB-NeRD at `ebnerd_large`, and reuse the testset embeddings. Then rebuild the store, re-run the temporal split, re-assert `train_max < val_min < test_min`.
-4. R10 checks at the new scale: no sampled user has an orphaned history row, and every
-   impression's user is in the sampled set.
+3. ✅ **Implemented.** `ingest_ebnerd.user_sample_filter` is applied to the raw numeric
+   `user_id` before prefixing, and pushed down into the Parquet scan.
+   `configs/ebnerd.yaml` now points at `ebnerd_large` with `user_sample_pct: 5`; this
+   was Chaitanya's choice over a second config, and A1's demo store reproduces from tag
+   `phase-5-complete`. The rebuild took **40 s at 3.3 GB peak**.
+   `scripts/assemble_embeddings.py` builds `embeddings.parquet` from existing vectors in
+   7 s (MIND 65,238 + EB-NeRD 125,541, IDs matching the store exactly, unit norms
+   verified by the production loader).
+4. ✅ **Verified at the new scale:**
+   - `train_max < val_min` and `val_max < test_min` for both datasets.
+   - EB-NeRD impressions: train 597,348 / val 435,677 / test 186,721, totalling exactly
+     D33's 1,219,746.
+   - No out-of-sample user, no duplicate impression or article IDs.
+   - **0** (split, user) pairs with impressions but no history row.
+   - 14,541 history rows have no impressions in their split. That is expected, not an
+     orphan: the validation snapshot serves both val and test, and (39,420 − 36,402) +
+     (39,420 − 27,897) = 14,541 exactly. Never joined, so harmless.
+   - MIND unchanged.
+5. ✅ **`tests/test_user_sample.py`**, 11 tests, mutation-verified with 4 of 4 caught.
+   The first pass caught only 3: `% 10` in place of `% 100` survived, because every
+   test ID left the same remainder under both. Fixed by adding user 110 (remainder 10
+   vs 0).
+
+---
+
+## Next step
+
+**Recall quiz on Phase A1 (R5), then Phase A2 — Q1 behavioural features (D34, D35).**
+Before any feature code, list the A2 feature allowlist against Landmines 1–3 below.
+The EB-NeRD features must use the new store's `history_timestamps`. MIND's recency can
+only use list position.
 
 **Teaching owed before Phase A3 code** (R1, in chat): gradient-boosted decision trees and
 why `lambdarank` differs from classifying each candidate independently.
@@ -177,7 +193,7 @@ Raw data is **hardlinked** from A1, so these are the same bytes on disk, not cop
 | EB-NeRD | demo | `data/raw/ebnerd/ebnerd_demo/` | 11,777 articles, 24,724 train behaviors, 1,590 users. Fast dev loop |
 | EB-NeRD | large | `data/raw/ebnerd/ebnerd_large/` | 12,063,890 train + 12,566,385 val behaviors, 125,541 articles. 3.4 GB. **A2's training source (D33)** |
 | EB-NeRD | testset | `data/raw/ebnerd/ebnerd_testset/ebnerd_testset/` | 13,536,710 impressions. Note the **doubled** directory name |
-| — | feature store | `data/processed/{articles,impressions,history,embeddings}.parquet` | 77,015 articles, 280,197 impressions, 154,714 history rows. **Rebuilt in Phase A1** |
+| — | feature store | `data/processed/{articles,impressions,history,embeddings}.parquet` | **Rebuilt in Phase A1 (D33).** Articles: MIND 65,238 + EB-NeRD 125,541. Impressions: MIND 230,117, EB-NeRD 1,219,746 (5% of `ebnerd_large` users). EB-NeRD history 39,260 / 39,420 / 39,420 (train/val/test). Rebuild: `build_pipeline.py` then `assemble_embeddings.py` |
 | — | submission store | `data/processed/submission/` | 5.0 GB — test article stores, test embeddings, N=100 user vectors. Carries 43 min of CPU |
 
 **MIND large train/dev are NOT downloaded** (only small + large-test). MIND-small's

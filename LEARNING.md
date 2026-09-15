@@ -475,6 +475,16 @@ is the same lesson from the opposite side.
 
 **Chaitanya chose** 5% and modulo selection, both the recommended options.
 
-**No comprehension check asked yet.** The R5 recall quiz on A0 was skipped, because A0
-was migration mechanics with no new concept. Owed at the end of A1: why the modulo rule
-needed the χ² check, and why tripling the sample does not cut the CI by three.
+The R5 recall quiz on A0 was skipped, because A0 was migration mechanics with no new
+concept.
+
+**Comprehension check (asked after committing D33).**
+1. *How could `user_id % 100 < 5` fail?* Chaitanya: "if the last two digits are linked
+   to some user info, like age, it will not be random." **Correct.** Added: a composite
+   ID such as `sequence × 100 + region code` is the realistic mechanism. Also that χ²
+   only proves the residue groups are equal in *size*, and the in/out behaviour table is
+   what proves they are alike in *kind*. Two checks, two different claims.
+2. *Why does 3× data narrow the CI by only ~1.7×?* Chaitanya: "not a linear relation;
+   more data gives diminishing returns." **Right direction, imprecise.** Re-taught the
+   exact law: width ∝ 1/√n, so 3× → √3 ≈ 1.73, halving needs 4×, and a tenth needs 100×.
+   Worth re-checking before Phase A4, where the paired bootstrap depends on it.
