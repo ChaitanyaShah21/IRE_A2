@@ -1,7 +1,16 @@
-# Operating Contract — IRE Assignment 1
+# Operating Contract — IRE Assignment 2
 
 This file loads automatically into every Claude Code session in this folder.
-`PROMPT.md` is an identical copy you can paste into any other chat tool.
+This file is an identical copy of `CLAUDE.md`, which you can paste into any other chat tool.
+
+**Assignment 2 continues Assignment 1.** This repository is a clone of the finished A1
+repo (tagged `phase-5-complete`, 240 tests passing) with its full history intact, so every
+module, decision and error-log entry from A1 is available here and must not be re-derived.
+A1 itself is frozen at `/home/csharp/IRE/A1`; nothing in this session writes there.
+
+A2 is nominally a **team assignment for two**. Chaitanya is doing it **alone**, which the
+spec permits. That fact is declared in the README and the design note rather than left
+implicit — it is context a grader needs, not an excuse offered in advance.
 
 **Read this before doing anything else in a session.**
 
@@ -207,21 +216,38 @@ to reconstruct after the fact.
 
 ## 4. Assignment facts (do not re-derive these)
 
-**Course:** CS4.406 Information Retrieval & Extraction · **Assignment 1** · Individual
-**Due:** 27 August 2026, at Quiz-1
-**Spec:** `A1.md` in this folder — the authoritative source. Re-read it when in doubt.
+**Course:** CS4.406 Information Retrieval & Extraction · **Assignment 2** · Teams of 2
+(being done solo, which the spec permits)
+**Due:** 20 September 2026
+**Spec:** `A2.md` in this folder — the authoritative source. Re-read it when in doubt.
+`A1.md` is kept alongside it because A2's Q2.1 reuses A1's candidate generator by name.
 
 **Deliverables**
 | Q | What | Where |
 |---|---|---|
-| Q1 | Reproducible data pipeline, one-command rebuild | GitHub Classroom |
-| Q2 | BM25 lexical retrieval + recall@K for K ∈ {50, 100, 200} | GitHub Classroom |
-| Q3 | Embedding-based semantic retrieval + recall@K + comparison | GitHub Classroom |
-| Q4 | Evaluation harness: AUC, MRR, nDCG@5, nDCG@10, diversity, novelty, coverage, ≥1 slice, bootstrap 95% CIs | GitHub Classroom |
+| Q1 | Click-history, session and article features + behaviour-window boundary enforcement | GitHub Classroom |
+| Q2 | Two-stage retrieve-then-rank: A1's generator for top-K (K 100–200), then a **trained** re-ranker; AUC/MRR/nDCG@5/nDCG@10 **before and after** | GitHub Classroom |
+| Q3 | Reproduce the official/starter baseline, beat it with **one** principled change, ablate it, and ship a **paired bootstrap 95% CI that excludes zero** | GitHub Classroom |
+| Q4 | Serving & scale: index memory, **p99** retrieval latency, cost per 1000 queries at an SLA, and what breaks at 10× | GitHub Classroom |
+| Q5 | All seven metrics with **≥2 slices** (cold/warm, head/tail) and bootstrap CIs on all, over the full two-stage pipeline | GitHub Classroom |
 | Q5 | Submissions to **both** Codabench leaderboards | Codabench + screenshots |
-| Q6 | Design note, ≤4 pages | Moodle |
-| Q7 | Code, design note, screenshots, AI usage log | Both |
-| Q9 | Anti-gaming: ablation with/without serving-time features, **plus a test asserting no future-click leakage** | GitHub Classroom |
+| Q6 | Design note PDF, **6 pages target** (guideline, not a hard cap), 11pt, 1-inch margins | Moodle |
+| Q7 | Code, report, screenshots, AI usage log | Both |
+| Q9 | Anti-gaming: metrics with/without serving-time features, **plus a test asserting no future-click leakage** | GitHub Classroom |
+
+**What A2 inherits from A1, already built and tested — do not rebuild:**
+ingestion for both datasets · the unified schema and feature store · the temporal split ·
+BM25 index and search · article embeddings (77,015 vectors) and semantic search ·
+availability filtering · AUC/MRR/nDCG metrics · beyond-accuracy metrics · slice
+definitions · the bootstrap · the submission writer and validator. A2 adds behavioural
+features, a trained re-ranker, a neural baseline, a **paired** bootstrap, and the serving
+benchmark.
+
+**A1's central finding, which A2 exists to act on.** BM25 and embedding retrieval are
+structurally blind to time — there is no time term anywhere in either formula — while
+92.7% (MIND) / 93.5% (EB-NeRD) of real clicks are on fresh articles. Three independent
+routes reached that conclusion. A2's behavioural features are the fix, which is why Q3's
+"one principled improvement" is chosen from A1's own measurements rather than hunted for.
 
 **Grading is never on leaderboard rank.** It is on pipeline correctness, system design,
 ablation rigour, scale analysis, and design-note clarity. Optimise for those.
@@ -238,9 +264,17 @@ memory-safe batching pattern. Mine them for facts. Never submit them as our work
 
 ## 5. Environment facts (do not re-discover these)
 
-- **Local:** WSL2, 7 GB RAM, **no GPU**, 911 GB disk free, Python 3.12.3, git 2.43.
-- **Strategy:** develop and debug locally on MIND-small and EB-NeRD-demo; move to
-  cloud (Kaggle / Colab — platform chosen in Phase 5) only for the large test sets.
+- **Local:** WSL2 on **aarch64** (Windows on ARM), **11 GB RAM + 16 GB swap** (raised
+  from 7 GB via `.wslconfig` during A1 — the WSL default is *half of host RAM*, not a
+  ceiling), **no GPU**, 892 GB disk free, Python 3.12.3, git 2.43.
+- **aarch64 matters and has already decided one thing.** A1 ruled out a self-hosted
+  Codabench worker partly because the required image ships amd64 only. Check wheel
+  availability on `aarch64` before depending on any new native library — LightGBM 4.7.0
+  was verified this way (native wheel, then a planted-signal smoke test) before pinning.
+- **Strategy:** develop and debug locally on MIND-small and EB-NeRD-demo; A2 additionally
+  trains on a seeded user-level subsample of `ebnerd_large`, which is already on disk.
+  A1's D29 settled that the large-scale runs go locally, and the measured numbers behind
+  that decision have not changed.
 - **Data is gitignored** and lives under `data/`. Exact locations recorded in `PROGRESS.md`.
 - **Structure:** Python package under `src/newsrec/`, command-line scripts under
   `scripts/`, notebooks are thin and only import-and-display.
@@ -256,8 +290,18 @@ different operations on different candidate sets. We need both, and confusing th
 the most common way this assignment goes wrong.
 
 **Temporal leakage.** Interaction data must never be split randomly. A click from
-Thursday must never inform a prediction about Wednesday. Assignment Q9 requires a test
-that asserts this — `tests/test_no_leakage.py`.
+Thursday must never inform a prediction about Wednesday. Q9 requires a test that asserts
+this — `tests/test_no_leakage.py` already exists with 12 tests in five groups, and is
+mutation-verified. A2 extends it to cover every new behavioural feature.
+
+**"Present in the test file" is not "available at serving time."** New in A2, and the
+single easiest way to produce an impressive number that means nothing. EB-NeRD's test
+behaviors keeps `read_time` and `scroll_percentage`, which are measured *after* the
+impression was served — Codabench accepting them does not make them honest. Likewise
+`total_pageviews` / `total_inviews` sit in our own `articles.parquet` already and are
+whole-dataset aggregates containing the future. **The A2 feature set is therefore an
+explicit allowlist, never a denylist**, and anything serving-unavailable is quarantined in
+`features/unavailable.py` as a Q9 ablation arm rather than scored.
 
 ---
 
@@ -266,9 +310,16 @@ that asserts this — `tests/test_no_leakage.py`.
 Each phase runs the same loop:
 
 ```
-concept teaching  →  required reading  →  options presented  →  Chaitanya chooses
-    →  small implementation steps  →  adversarial self-check (R10)  →  test
-    →  update living docs  →  commit  →  tag
+concept teaching (in chat, per R1's 2026-08-25 amendment)  →  options presented
+    →  Chaitanya chooses  →  small implementation steps
+    →  adversarial self-check (R10)  →  test  →  update living docs  →  commit  →  tag
 ```
+
+**Pacing for A2, settled 2026-09-15 with five days to the deadline.** Reduced, targeted
+depth: full R1 teaching for the genuinely new concepts (gradient-boosted trees and the
+LambdaRank objective, NRMS's attention, the *paired* bootstrap); R6 options-and-trade-offs
+for forks that change results; R10 adversarial checks on everything, with mutation-testing
+reserved for new numeric code (features, paired bootstrap, leakage). Living documents and
+the decision log stay complete — that is never the part being traded away.
 
 Phases are listed with time budgets in `PROGRESS.md`.

@@ -83,6 +83,28 @@ Chaitanya's `/model` choice) — noted per-commit in git history, not tracked he
 
 _Appended as files are created._
 
+## Assignment 2 — authorship
+
+A2 is nominally a team assignment for two and is being done **solo**, which the spec
+permits. Every file below is therefore Chaitanya's work with AI assistance under the
+`CLAUDE.md` contract — there is no second human author to distinguish from.
+
+Everything inherited from A1 keeps the authorship marking recorded in the table above;
+the A2 rows cover only what A2 adds or changes.
+
+| File | Authorship | Notes |
+|---|---|---|
+| `A2.md` | Course-provided | The assignment specification, unmodified |
+| `CLAUDE.md`, `PROMPT.md` | AI-edited, human-decided | A2 sections §0/§4/§5/§6/§7 rewritten; rules R1–R14 unchanged from A1. The four planning-stage choices (repo layout, NRMS route, EB-NeRD scale, pacing) were put as options with trade-offs and chosen by Chaitanya |
+| `PROGRESS.md` | AI-maintained | Rewritten for A2; A1's archived to `archive/A1_PROGRESS.md` with its error log carried forward inline |
+| `ARCHITECTURE.md` | AI-generated, human-decided | A2 section appended from D33; D1–D32 unchanged |
+| `requirements.txt` | AI-edited | `lightgbm==4.7.0` added, verified on aarch64 before pinning |
+
+_(Rows are added as each A2 file is written, per R14 — reconstructing authorship after
+the fact is exactly what this section exists to avoid.)_
+
+---
+
 ## Prompt log
 Exported to `reports/ai_transcripts/` — **12 sessions, 155 prompts**, 21–27 August 2026.
 Start at `reports/ai_transcripts/index.md`.
