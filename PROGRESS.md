@@ -140,8 +140,13 @@ submissions. These are named requirements, not depth.
 
 ## Next step
 
-**Recall quiz on Phase A1 (R5), then Phase A2 — Q1 behavioural features (D34, D35).**
-Before any feature code, list the A2 feature allowlist against Landmines 1–3 below.
+**Phase A2 — Q1 behavioural features (D34, D35).** The A1 recall quiz was answered
+2026-09-15: 2 of 3 correct, the embedding-reuse check re-taught (see `LEARNING.md`).
+
+**Waiting on Chaitanya: D34, the feature allowlist.** Evidence is gathered and three
+options (symmetric core / + EB-NeRD session / + demographics) are written up in
+`ARCHITECTURE.md`. Nothing is implemented until he picks one.
+Then: teaching on exponential decay (R1), then the feature builders.
 The EB-NeRD features must use the new store's `history_timestamps`. MIND's recency can
 only use list position.
 

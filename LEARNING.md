@@ -488,3 +488,19 @@ concept.
    more data gives diminishing returns." **Right direction, imprecise.** Re-taught the
    exact law: width ∝ 1/√n, so 3× → √3 ≈ 1.73, halving needs 4×, and a tenth needs 100×.
    Worth re-checking before Phase A4, where the paired bootstrap depends on it.
+
+### Recall quiz on Phase A1 (answered 2026-09-15)
+1. *Why user-level rather than impression-level sampling?* Chaitanya: "it would favour
+   users with larger history, so it won't be completely random." **Partly right** — that
+   bias is real (impression-level sampling over-represents heavy users). Added the reason
+   we actually ruled it out: a user's history row describes all their clicks, so keeping
+   some impressions and dropping others makes history and impressions describe different
+   things. Inconsistent, not merely skewed.
+2. *Why isn't val/test 50/50?* "Because we split the data 70/30." **Correct** (D8, by row
+   count over the validation week).
+3. *What was checked before reusing the embeddings?* "idk." **Re-taught:** the two article
+   tables were compared and found frame-equal first. Without that, a store article could
+   have had no vector, or a vector built from different text under the same id — wrong
+   numbers with no error. This is why `assemble_embeddings.py` refuses to write unless the
+   ids match exactly. **Re-check this one before Phase A4**; it is the same
+   "well-formed but meaning something else" shape as the rank-vector trap.
