@@ -12,8 +12,8 @@ The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, an
 evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a, D35 decided. Step A2.1 done:** `features/history.py`, the multi-scale decayed user vectors,
 category shares and hours-since-last-click, with the boundary guard. 25 tests,
 9 of 9 mutations caught. **Step A2.2 done:** `features/article.py`, freshness from the
-earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Next: A2.3,
-EB-NeRD session features (D34a).**
+earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Step A2.3 done:** `features/session.py`. **Next: A2.4, assemble one row
+per (impression, candidate), plus `unavailable.py` (the Q9 arm).**
 **Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
 The pre-agreed drop order below is now live.**
 
@@ -180,6 +180,14 @@ submissions. These are named requirements, not depth.
    padding in `span` independently prevents the cross-article spill. Proven by
    experiment: removing *both* guards fails the test, with 30 borrowed impressions
    instead of 0. Removing either guard alone passes.
+7. ✅ **`src/newsrec/features/session.py`**: session position (strictly earlier, ties
+   shared), minutes since the session began, and device type. Label-free, EB-NeRD only.
+   **Keyed by (user, session)**, because 1,032 `session_id`s are shared across users.
+   Keyed by the ID alone, the longest 'session' is 14 days (two strangers merged). Keyed
+   properly, the longest is 29 min. 37 real sessions cross the train/val boundary, so
+   the features are computed across all splits.
+8. ✅ **`tests/test_session_features.py`**, 8 tests, 6 of 6 mutations caught (including
+   the session-ID-only key, and ties broken by file order).
 
 ---
 
@@ -234,7 +242,10 @@ why `lambdarank` differs from classifying each candidate independently.
    at that moment. **No catalogue-wide statistic** (counts, category frequencies, "exists
    in catalogue") is ever a feature. A1's candidate pools are unaffected: they use
    `first_seen_times` from impressions, with a strict `<`.
-7. **A1 measured recall@200 at 2–8%.** A two-stage pipeline evaluated over *retrieved*
+7. **EB-NeRD `session_id` is not unique across users** (found 2026-09-18). 1,032 IDs are
+   shared, so any session grouping must key on **(user_id, session_id)**. Keyed on the
+   ID alone, the longest 'session' is 14 days; keyed properly, 29 minutes.
+8. **A1 measured recall@200 at 2–8%.** A two-stage pipeline evaluated over *retrieved*
    candidates will therefore have low absolute numbers **by construction**. Expected, and
    framed rather than hidden — it is exactly why both leaderboards score the supplied
    inview list instead.
