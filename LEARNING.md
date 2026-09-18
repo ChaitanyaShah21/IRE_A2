@@ -516,3 +516,11 @@ the same as each of large's weeks). It only lacks the labels.
 **The question surfaced a real landmine** (now PROGRESS Landmine 6): the shared catalogue
 runs a month past the test week, so any catalogue-wide statistic leaks the future.
 Recorded as Chaitanya's catch.
+
+**Comprehension check (2026-09-18).** *Would "this article's category is 12% of the
+catalogue" be a leak?* Chaitanya: "yes, the catalogue contains articles from after the one
+we're making the statement for, so it can leak future information." **Correct.** Sharpened
+with the mechanism: a story breaking next week puts its articles in today's catalogue, so
+the category's share is inflated now by coverage that hasn't happened yet. The honest
+version is computed per impression, over articles published or first seen strictly before
+that impression's timestamp.
