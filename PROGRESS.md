@@ -11,7 +11,9 @@
 The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, and D34's
 evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a, D35 decided. Step A2.1 done:** `features/history.py`, the multi-scale decayed user vectors,
 category shares and hours-since-last-click, with the boundary guard. 25 tests,
-9 of 9 mutations caught. **Next: A2.2, article features (freshness, train-window popularity).**
+9 of 9 mutations caught. **Step A2.2 done:** `features/article.py`, freshness from the
+earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Next: A2.3,
+EB-NeRD session features (D34a).**
 **Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
 The pre-agreed drop order below is now live.**
 
@@ -162,6 +164,22 @@ submissions. These are named requirements, not depth.
      anyway. It is not harmless: the MIN_NORM guard judges the length *before*
      re-normalising, so a near-cancelling pair of clicks would slip past it. Added the
      near-cancellation case.
+4. ✅ **D34b (popularity = label-free exposure share, 1 h and 24 h) and D34c (freshness
+   from the earliest evidence)** were decided when A2.2 surfaced them. Three findings:
+   - **Click popularity is unusable on the testset**, which has no labels.
+   - **It would leak into training rows** through their own clicks.
+   - **A raw count is scale-dependent.** A 5% sample against the full leaderboard
+     population would be ~20× off, so the feature is a share.
+   - Separately, **1,810 EB-NeRD candidate rows (11 articles) are shown before their
+     `published_time`**, most likely a republication overwriting the original stamp.
+5. ✅ **`src/newsrec/features/article.py`**: `candidate_rows`, `freshness_hours`,
+   `exposure_shares`. Vectorised with `searchsorted` over an (article, second) key, and
+   strictly before *T*.
+6. ✅ **`tests/test_article_features.py`**, 13 tests. 8 of 9 mutations were caught
+   directly. The 9th (removing the window clamp) is an **equivalent mutant**, because the
+   padding in `span` independently prevents the cross-article spill. Proven by
+   experiment: removing *both* guards fails the test, with 30 borrowed impressions
+   instead of 0. Removing either guard alone passes.
 
 ---
 

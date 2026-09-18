@@ -77,6 +77,8 @@ Chaitanya's `/model` choice) — noted per-commit in git history, not tracked he
 | `tests/test_user_sample.py` | AI-generated | R10 suite, 11 tests. Mutation-tested: 4 bugs reintroduced; the first run caught 3, and the survivor (`% 10` for `% 100`) exposed a gap in the test data, fixed by adding user 110 |
 | `src/newsrec/features/history.py` | AI-generated, human-decided | Q1.1 decay features. D34/D34a/D35 chosen by Chaitanya. His answer to the negative-Δt check question is the reason the guard raises rather than clips |
 | `tests/test_history_features.py` | AI-generated | R10 suite, 25 tests. 9 of 9 mutations caught after two test-data gaps were closed |
+| `src/newsrec/features/article.py` | AI-generated, human-decided | Q1.3 freshness and exposure popularity. D34b and D34c chosen by Chaitanya |
+| `tests/test_article_features.py` | AI-generated | R10 suite, 13 tests. 8 of 9 mutations caught; the 9th proven equivalent by removing both guards |
 | `reports/NUMBERS.md` | AI-generated, human-directed | Chaitanya asked for a single numbers ledger after Quiz-1 showed answers are cross-checked against the repo. Values are measured or marked as estimates; provenance recorded per row |
 | `tests/test_no_leakage.py` | AI-generated | The Q9 deliverable. Mutation-verified: 5 deliberate leaks reintroduced, all 5 caught, including relaxing D19's strict inequality. The EB-NeRD history landmine it tests was found by Chaitanya's earlier D19 discussion insisting availability be label-free as well as temporal |
 | `scripts/run_ablation.py` | AI-generated | Thin entry point for Q9 |
