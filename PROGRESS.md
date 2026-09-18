@@ -9,7 +9,7 @@
 **Phase A1 complete** — the feature store now holds a 5% user sample of `ebnerd_large`
 (D33): 1,219,746 EB-NeRD impressions against the demo's 24,724. 251 tests pass.
 The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, and D34's
-evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **Next: D34a, whether session features may use clicks from earlier impressions in the same session (the testset has no labels).**
+evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a decided: label-free session features only.** **Next: teach exponential decay (R1), then the decay half-life fork, then the feature builders.**
 **Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
 The pre-agreed drop order below is now live.**
 
