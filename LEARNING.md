@@ -504,3 +504,15 @@ concept.
    numbers with no error. This is why `assemble_embeddings.py` refuses to write unless the
    ids match exactly. **Re-check this one before Phase A4**; it is the same
    "well-formed but meaning something else" shape as the rank-vector trap.
+
+### Follow-up question from Chaitanya (2026-09-18)
+*"Why are the large and test article tables the same, if large is much bigger?"*
+Taught with the newsagent analogy: one **catalogue** binder, and separate piles of **till
+receipts** per week. "Large" versus "test" means different weeks of receipts, i.e.
+behaviour logs. The catalogue is shared, so every week's candidates have content. Also
+corrected the premise: the testset is not small (13.5M impressions for one week, about
+the same as each of large's weeks). It only lacks the labels.
+
+**The question surfaced a real landmine** (now PROGRESS Landmine 6): the shared catalogue
+runs a month past the test week, so any catalogue-wide statistic leaks the future.
+Recorded as Chaitanya's catch.

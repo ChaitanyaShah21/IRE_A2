@@ -180,7 +180,16 @@ why `lambdarank` differs from classifying each candidate independently.
    — A1's recorded landmine). `history.parquet` holds all three snapshots keyed by
    `split`, and 1,217 EB-NeRD users have all three rows, so a join on `user_id` alone
    silently attaches the wrong one and **nothing errors**.
-6. **A1 measured recall@200 at 2–8%.** A two-stage pipeline evaluated over *retrieved*
+6. **The EB-NeRD article catalogue contains the future** (found 2026-09-18, from
+   Chaitanya asking why the large and test article tables are identical). One catalogue
+   covers the whole collection period and ships in every bundle. It runs to
+   **2023-07-11**, a month after the test week ends. **2,148 articles** were published
+   after the train week ended and **1,069** after the validation week ended. So:
+   freshness = `impression_time - published_time`, only for articles already published
+   at that moment. **No catalogue-wide statistic** (counts, category frequencies, "exists
+   in catalogue") is ever a feature. A1's candidate pools are unaffected: they use
+   `first_seen_times` from impressions, with a strict `<`.
+7. **A1 measured recall@200 at 2–8%.** A two-stage pipeline evaluated over *retrieved*
    candidates will therefore have low absolute numbers **by construction**. Expected, and
    framed rather than hidden — it is exactly why both leaderboards score the supplied
    inview list instead.
