@@ -1,6 +1,6 @@
 # Progress — Assignment 2
 
-**Read this first in every session (R11).** Last updated: 2026-09-15
+**Read this first in every session (R11).** Last updated: 2026-09-18
 
 ---
 
@@ -8,7 +8,10 @@
 
 **Phase A1 complete** — the feature store now holds a 5% user sample of `ebnerd_large`
 (D33): 1,219,746 EB-NeRD impressions against the demo's 24,724. 251 tests pass.
-**Next: recall quiz on A1 (R5), then Phase A2 — Q1 behavioural features.**
+The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, and D34's
+evidence is gathered. **Next: Chaitanya picks D34 (the feature allowlist), then Phase A2.**
+**Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
+The pre-agreed drop order below is now live.**
 
 A1 is finished and frozen at `/home/csharp/IRE/A1` (tag `phase-5-complete`). This repo is
 a clone of it with full history and all six A1 tags, so every A1 module, decision and
