@@ -81,6 +81,10 @@ Chaitanya's `/model` choice) — noted per-commit in git history, not tracked he
 | `tests/test_article_features.py` | AI-generated | R10 suite, 13 tests. 8 of 9 mutations caught; the 9th proven equivalent by removing both guards |
 | `src/newsrec/features/session.py` | AI-generated, human-decided | Q1.2 session features; D34a (label-free) chosen by Chaitanya |
 | `tests/test_session_features.py` | AI-generated | R10 suite, 8 tests, 6 of 6 mutations caught |
+| `src/newsrec/features/assemble.py` | AI-generated, human-decided | Q1 feature table; the allowlist reflects D34/D34a/D34b/D34c/D35, all chosen by Chaitanya |
+| `src/newsrec/features/unavailable.py` | AI-generated | Q9 quarantine arm; never imported by production code (asserted) |
+| `tests/test_feature_table.py` | AI-generated | Allowlist and quarantine assertions |
+| `tests/test_no_leakage.py` (A2 extension) | AI-generated | Future-deletion and label-blindness properties on both datasets; 4 of 4 planted forward leaks caught after extending to MIND |
 | `reports/NUMBERS.md` | AI-generated, human-directed | Chaitanya asked for a single numbers ledger after Quiz-1 showed answers are cross-checked against the repo. Values are measured or marked as estimates; provenance recorded per row |
 | `tests/test_no_leakage.py` | AI-generated | The Q9 deliverable. Mutation-verified: 5 deliberate leaks reintroduced, all 5 caught, including relaxing D19's strict inequality. The EB-NeRD history landmine it tests was found by Chaitanya's earlier D19 discussion insisting availability be label-free as well as temporal |
 | `scripts/run_ablation.py` | AI-generated | Thin entry point for Q9 |

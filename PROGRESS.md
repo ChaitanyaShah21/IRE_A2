@@ -12,8 +12,9 @@ The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, an
 evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a, D35 decided. Step A2.1 done:** `features/history.py`, the multi-scale decayed user vectors,
 category shares and hours-since-last-click, with the boundary guard. 25 tests,
 9 of 9 mutations caught. **Step A2.2 done:** `features/article.py`, freshness from the
-earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Step A2.3 done:** `features/session.py`. **Next: A2.4, assemble one row
-per (impression, candidate), plus `unavailable.py` (the Q9 arm).**
+earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Phase A2 complete** (tag `a2-phase-2-complete`): all Q1 features, the Q9 quarantine,
+and the leakage test extended. 304 tests pass. **Next: recall quiz on A2 (R5), then
+Phase A3, the trained re-ranker (D36: which rows train it, D37: candidate regimes).**
 **Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
 The pre-agreed drop order below is now live.**
 
@@ -62,8 +63,8 @@ Budget ≈ 22 h across five days. Each phase ends: living-doc update (R12) → c
 |---|---|---|---|
 | A0 | Migration & setup | 1 h | ✅ done — tag `a2-phase-0-complete` |
 | A1 | Data scale-up: EB-NeRD subsample (D33) | 2 h | ✅ done — tag `a2-phase-1-complete` |
-| A2 | Q1 — behavioural features + boundary contract (D34, D35) | 4 h | ⬜ **next** |
-| A3 | Q2 — trained re-ranker, two candidate regimes (D36, D37) | 4 h | ⬜ |
+| A2 | Q1 — behavioural features + boundary contract (D34, D35) | 4 h | ✅ done (~4 h) — tag `a2-phase-2-complete` |
+| A3 | Q2 — trained re-ranker, two candidate regimes (D36, D37) | 4 h | ⬜ **next** |
 | A4 | Q3 — NRMS baseline, improvement, ablation, paired CI (D38–D40) | 5 h | ⬜ |
 | A5 | Q4 serving/scale + Q5 extended eval + leaderboards | 3 h | ⬜ |
 | A6 | Q6/Q7 — design note & deliverables | 3 h | ⬜ |
@@ -188,6 +189,30 @@ submissions. These are named requirements, not depth.
    the features are computed across all splits.
 8. ✅ **`tests/test_session_features.py`**, 8 tests, 6 of 6 mutations caught (including
    the session-ID-only key, and ties broken by file order).
+9. ✅ **`features/assemble.py`**: one row per (impression, candidate). The explicit
+   `FEATURES` allowlist has 10 features on MIND and 14 on EB-NeRD. The output columns
+   are *asserted* to equal keys + label + allowlist. A1's scorers are features:
+   `cos_inf` is A1's semantic score and `bm25` its lexical one. Smoke run on 200 val
+   impressions:
+   - MIND: 7,658 rows, label rate 4.0%, nulls only for the 281 rows with no user history.
+   - EB-NeRD: 2,127 rows, label rate 9.4%, no nulls.
+   - Fixed cost per build ~35 s (MIND) / ~75 s (EB-NeRD): the BM25 index plus three
+     decayed-vector builds.
+10. ✅ **`features/unavailable.py`**, the Q9 quarantine: `read_time`,
+    `scroll_percentage`, `total_pageviews`, `future_exposure_share_24h`. A test asserts
+    it is imported nowhere in the package.
+11. ✅ **`tests/test_no_leakage.py` extended** with two properties, on real val data for
+    **both** datasets:
+    - *Future deletion:* delete every impression after τ; features at or before τ must
+      be identical. The quarantined future feature *fails* the same check, which proves
+      the check can see a leak.
+    - *Label blindness:* shuffle the clicks; every feature must be identical.
+    Mutation-verified with four realistic forward leaks planted in production code
+    (forward exposure window, first_seen → last_seen, session start → last impression,
+    a label-nudged feature). **All four are caught, but only after extending the test to
+    MIND.** first_seen → last_seen survived on EB-NeRD alone, because there
+    `published_time` almost always wins the min, so the first_seen path is exercised
+    only on MIND.
 
 ---
 
