@@ -9,7 +9,9 @@
 **Phase A1 complete** — the feature store now holds a 5% user sample of `ebnerd_large`
 (D33): 1,219,746 EB-NeRD impressions against the demo's 24,724. 251 tests pass.
 The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, and D34's
-evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a decided: label-free session features only.** **Next: teach exponential decay (R1), then the decay half-life fork, then the feature builders.**
+evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a, D35 decided. Step A2.1 done:** `features/history.py`, the multi-scale decayed user vectors,
+category shares and hours-since-last-click, with the boundary guard. 25 tests,
+9 of 9 mutations caught. **Next: A2.2, article features (freshness, train-window popularity).**
 **Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
 The pre-agreed drop order below is now live.**
 
@@ -138,6 +140,28 @@ submissions. These are named requirements, not depth.
    The first pass caught only 3: `% 10` in place of `% 100` survived, because every
    test ID left the same remainder under both. Fixed by adding user 110 (remainder 10
    vs 0).
+
+### Phase A2 — Q1 behavioural features (2026-09-18, in progress)
+1. ✅ **D34 = option B, D34a = label-free session features, D35 = multi-scale decay.**
+2. ✅ **`src/newsrec/features/history.py`:**
+   - `decay_weights`: ages measured from the newest click; refuses negative or
+     non-finite ages.
+   - `build_decayed_user_vectors`: at h = ∞ it equals A1's vectors, verified exactly on
+     constructed data and on 3,000 real MIND users.
+   - `user_category_shares`.
+   - `hours_since_last_click`: the boundary guard. It raises on a tie, a future click or
+     mixed splits. It runs clean on all three real EB-NeRD splits, so the store contains
+     no history click dated after its impression.
+   - N = 100 comes from D31. The library default of 10 (D12, tuned for retrieval) would
+     have silently compared against the wrong A1.
+3. ✅ **`tests/test_history_features.py`**, 25 tests, 9 of 9 mutations caught. The first
+   pass left **two survivors, both test gaps**:
+   - The 'long history' user cycled through the same six articles, so head and tail
+     were the same set. The same shape as D33's `% 10` survivor.
+   - Removing the division by Σw looked harmless, because the vector is re-normalised
+     anyway. It is not harmless: the MIN_NORM guard judges the length *before*
+     re-normalising, so a near-cancelling pair of clicks would slip past it. Added the
+     near-cancellation case.
 
 ---
 
