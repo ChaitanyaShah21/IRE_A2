@@ -524,3 +524,26 @@ with the mechanism: a story breaking next week puts its articles in today's cata
 the category's share is inflated now by coverage that hasn't happened yet. The honest
 version is computed per impression, over articles published or first seen strictly before
 that impression's timestamp.
+
+## Phase A2 — exponential decay (taught 2026-09-18)
+
+**Taught in chat:** the lunch-guessing analogy (older meals count less, smoothly and
+compounding); age Δt = T − tᵢ measured from *this* impression; the half-life *h*; weight
+0.5^(Δt/h) ≡ e^(−λΔt) with λ = ln2/h; the recency-weighted user vector and the
+recency-weighted category share as the two features it produces; and the MIND asymmetry,
+where age is list position because timestamps are 100% null.
+
+**Comprehension check.**
+1. *Weight at 12 h with h = 6 h?* "0.5² = 25%." **Correct.**
+2. *Why are MIND position-decay and EB-NeRD time-decay not comparable?* The key example
+   was **right**: a user returning after months gets +1 in position but months in time.
+   **But the answer conflated two features.** *Freshness* is the candidate article's age
+   (MIND: from `first_seen_times`); *recency decay* weights the user's history clicks.
+   Different objects, different formulas. Re-stated the distinction; worth re-checking,
+   since an examiner can ask about either.
+3. *Negative Δt?* "Weight > 1, so it silently overshadows multiple fresh articles."
+   **Correct.** Sharpened on two points. The weight is exponential in how far into the
+   future the click is (10 half-lives ahead = ×1,024). And a future click is often the
+   very article being predicted, so the bug hands the model the answer, and the numbers
+   get better. Hence the builder **raises** on Δt < 0 rather than clipping: a clip would
+   hide the one symptom of joining the wrong history snapshot (Landmine 5).
