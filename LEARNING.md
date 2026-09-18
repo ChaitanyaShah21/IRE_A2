@@ -547,3 +547,23 @@ where age is list position because timestamps are 100% null.
    very article being predicted, so the bug hands the model the answer, and the numbers
    get better. Hence the builder **raises** on Δt < 0 rather than clipping: a clip would
    hide the one symptom of joining the wrong history snapshot (Landmine 5).
+
+## Phase A2 — exposure share (2026-09-18)
+
+**Check:** why does `i3` not count `i2` when both have the same timestamp? Chaitanya:
+"because we use strictly less than." **Correct.** Added: "before" is defined by time, not
+file order, and same-second impressions are simultaneous, so neither could have known
+about the other.
+
+**He then asked what the exposure share measures, more clearly.** Re-taught with the
+newsagent-window analogy (you see what the shop displays, never what sold) and a worked
+example: 200 impressions in the last hour; the breaking story is shown in 150 (share
+0.75), yesterday's recap in 10 (0.05), a two-minute-old article in 0.
+
+Contrasted with click popularity:
+- *Readers' choice* vs *the site's push*.
+- Needs labels vs visible in every candidate list.
+- Last week vs last hour.
+
+Also covered why it is a share (5% sample vs full testset, ~20× scale), why two windows
+(breaking vs today's story), and its blind spot: shown is not liked.
