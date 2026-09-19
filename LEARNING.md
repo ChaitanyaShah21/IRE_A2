@@ -590,3 +590,33 @@ example, then the technical term.**
 3. *Why key sessions on (user, session)?* "Users share session numbers; the ID alone
    gave a 14-day session, which is implausible; user + session makes each unique."
    **Correct.**
+
+## 2026-09-19: GBDT and LambdaRank (taught before A3 was confirmed; the code was written while Chaitanya was away)
+
+**Taught, in chat:** a decision tree is a flowchart of threshold questions ending in leaf
+values. Boosting means each new tree fits the mistakes the trees before it left. The
+final score is the sum of leaves × learning rate. LambdaRank defines a "mistake" only as a
+wrongly ordered (clicked, unclicked) pair *inside one impression*, pushed harder when the
+swap would move nDCG more (top positions). Landmine 4: LightGBM sees groups only as
+sizes, so shuffled rows train silently on nonsense.
+
+**Check 1: what is tree 5 trained to predict?** Answer: "each tree improves on the
+accuracy of the previous one". Right in spirit. Clarified that tree 5 fits the pushes
+(the leftover pairwise mistakes of trees 1–4), not the click labels.
+
+**His own question: why does MIND barely improve after 18 trees? Are the trees wrong?**
+Answered with evidence:
+- Training nDCG@10 rises 0.396 → 0.457 over 300 trees while validation stays flat at
+  ~0.41, so the trees learn, but the gain doesn't carry over.
+- On MIND, single-feature AUCs put freshness at 0.534 and exposure at 0.533, against
+  similarity's 0.610. MIND has no publication times and no history timestamps.
+- The same code lifts EB-NeRD 0.546 → 0.743.
+
+**Check 2: why doesn't LambdaRank care that a busy hour's scores are all higher? Why do
+trees struggle with rack-relative signals?** Answer: "idk". **Re-taught** with a
+two-impression table: pairs are only ever within an impression; a fixed threshold puts
+both candidates of one rack in the same leaf.
+
+**Re-check: with a ratio-to-rack-max feature, would trees need different thresholds for
+busy and quiet hours?** Answer: "no, the ratios are normalised between 0 and 1".
+**Correct.** Understood after re-teaching.
