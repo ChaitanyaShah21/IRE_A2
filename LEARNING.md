@@ -567,3 +567,26 @@ Contrasted with click popularity:
 
 Also covered why it is a share (5% sample vs full testset, ~20× scale), why two windows
 (breaking vs today's story), and its blind spot: shown is not liked.
+
+## Phase A2 wrap-up (2026-09-18/19)
+
+**Chaitanya asked for "better explanations"** after the A2 summary, which was written in
+project shorthand. Re-explained the whole phase with a running example: Anna at 10:00,
+three candidates, the feature table as a spreadsheet, each clue in one plain sentence,
+the two leakage tests as "delete tomorrow's paper" and "shuffle the answer sheet", and
+the smoke-alarm test button. **Standing style from now on: problem first, then a worked
+example, then the technical term.**
+
+**Recall quiz on Phase A2.**
+1. *Why a share, not a count?* "The model learns what a good count is on 5% of users;
+   on the full leaderboard counts are 20× inflated and it misreads them." **Correct.**
+2. *Why must the quarantined future feature FAIL the future-deletion test?* He answered
+   that it would mean "there is temporal leakage". **Inverted, and re-taught.** The
+   cheating feature is known to leak, so a working test must fail it. If it passed, the
+   test would be blind, and its pass on real features would mean nothing ("the alarm is
+   broken", not "no fire"). Also corrected: the test deletes *page views* (data) after
+   τ and rebuilds the features. It does not delete features. **Re-check this before
+   Phase A4**, since the ablation logic relies on the same idea.
+3. *Why key sessions on (user, session)?* "Users share session numbers; the ID alone
+   gave a 14-day session, which is implausible; user + session makes each unique."
+   **Correct.**
