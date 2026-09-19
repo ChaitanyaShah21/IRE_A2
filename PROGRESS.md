@@ -15,22 +15,28 @@
 - `reports/NUMBERS.md` is the numbers ledger: every figure we would quote, with its
   source.
 
-**HANDOFF 2026-09-19. Chaitanya is continuing in a new chat. Start here:**
-1. **Confirm the scoped schedule. It was PROPOSED, not agreed.** The deadline is
-   **2026-09-20** and ~15 h of planned phases remain, which does not fit. The proposal:
-   - A3 re-ranker, trained on the supplied inview lists first.
-   - A4 with MIND NRMS only (drop-order item 3), keeping the paired bootstrap CI.
-   - A5 and A6 trimmed to spec. The ledger and audit already cover much of Q4.
-2. **Teach (R1)** gradient-boosted trees and LambdaRank (versus scoring each candidate
-   independently) before any A3 code.
-3. **R6 forks for A3:**
-   - **D36:** which rows train the re-ranker (the train split? with what history
-     snapshot?).
-   - **D37:** the candidate regimes (supplied inview vs retrieved top-K).
-   - Landmine 4 applies: LambdaRank needs rows grouped contiguously by impression, and
-     that must be asserted.
-4. **Explanation style:** plain problem first, then a worked example, then the term.
-   Chaitanya asked for this on 2026-09-19 after a dense summary. It is also in auto-memory.
+**SESSION 2026-09-19 (afternoon). Chaitanya away; asked for independent work first.**
+Done alone, with every fork taken at its recommendation and marked PROVISIONAL in
+`ARCHITECTURE.md`:
+- **A3 / Q2 re-ranker built and measured** (commit `85a8f43`). LambdaRank on the cached
+  feature tables (`data/processed/features/`). Local test AUC: EB-NeRD **0.5457 → 0.7428**,
+  MIND 0.6097 → 0.6144. Paired CIs exclude zero on AUC for both. D36 and D37 provisional.
+- **A real bug found and fixed:** MIND impression ids repeat across train and dev. See the
+  error log.
+- **Leaderboard pipeline (D38) built:** `scripts/run_submission_lgbm.py`, user-partitioned
+  and resumable (a rerun skips finished groups). EB-NeRD full run **in progress**
+  (~2.7 h). Scores go to `data/processed/submission/lgbm_scores_ebnerd/`, the file to
+  `reports/submissions/ebnerd_lgbm.{txt,zip}`. MIND is next (~93M rows).
+- **Q3 prepared, not run:** NRMS code and tests exist. **D39/D40 await Chaitanya.**
+
+**When Chaitanya is back, in order:**
+1. Confirm or reverse D36, D37 and D38 (provisional).
+2. Teach (R1) GBDT and LambdaRank against the real numbers above. Then decide D39/D40.
+3. Upload both leaderboard zips after `validate_submission.py`. **EB-NeRD's Codabench
+   needed a self-hosted worker in A1** (see `AI_USAGE.md`), so allow time for it.
+4. Remaining: Q2 retrieved regime (`run_retrieved_regime.py`, written, not run), Q3 runs,
+   Q4 p99 latency for the two-stage pipeline, Q5 slices over the new model, Q9
+   with/without table for A2, then the design note.
 
 **Feature table entry point:** `features/assemble.build_feature_table(dataset, target,
 all_impressions, history, articles, emb_ids, emb)`. Fixed cost ~35 s (MIND) / ~75 s

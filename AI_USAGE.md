@@ -168,3 +168,16 @@ and pre-signed URL signatures appearing in pasted terminal output are masked.
 | `scripts/export_ai_transcripts.py` | AI-generated | Produces this file's prompt log (Q7.4). There is no CLI export flag and the in-session `/export` covers only the current conversation, which would have missed 11 of the 12 sessions |
 | `reports/ai_transcripts/*` | Generated output | Not authored; reproducible via the script above |
 | `codabench/` (removed) | AI-generated | Tooling written on 2026-08-27 to get the EB-NeRD submission scored after the competition's own compute workers were retired. **Removed from the repository** as infrastructure rather than pipeline work; it remains in git history. Recorded here because it was authored during the project even though it is no longer part of it |
+
+### Assignment 2, Phase A3 (2026-09-19). Written while Chaitanya was away, at his request to "do anything that you can do on your own first"
+
+| File | Authorship | Notes |
+|---|---|---|
+| `src/newsrec/rank/gbdt.py` | AI-generated | Q2's LambdaRank re-ranker. Landmine 4 (contiguous groups) is enforced from the ids, not trusted |
+| `tests/test_gbdt.py` | AI-generated | 9 tests. The first version of the planted-signal test failed, which is how the "trees read absolute values" property recorded under D36 was found |
+| `src/newsrec/eval/bootstrap.py` (`paired_bootstrap_diff`) | AI-generated | Q3.4's paired CI. NaN is dropped jointly, so the pairing cannot silently dissolve |
+| `src/newsrec/features/assemble.py`, `article.py` (context/rows split, `ExposureIndex`) | AI-generated | Refactor for the 206M-row leaderboard. Verified by rebuilding the cached tables: EB-NeRD byte-identical, and MIND differed, which exposed the reused-id bug |
+| `src/newsrec/submission.py` (session columns) | AI-generated | Leaderboard loader now carries `session_id` and `device_type`, cast as in the training store |
+| `scripts/build_feature_tables.py`, `run_reranker.py`, `run_retrieved_regime.py`, `run_submission_lgbm.py` | AI-generated | Cache the feature tables, run Q2 in both regimes, and produce the leaderboard submission |
+| `src/newsrec/rank/nrms.py`, `tests/test_nrms.py`, `scripts/run_nrms.py` | AI-generated | Q3's NRMS over frozen sentence embeddings (D39, provisional), plus the time-term improvement hook |
+| `reports/rerank_*.csv` | Generated output | From `run_reranker.py` |
