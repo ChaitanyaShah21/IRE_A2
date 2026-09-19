@@ -6,43 +6,46 @@
 
 ## Where we are right now
 
-**Phase A1 complete** — the feature store now holds a 5% user sample of `ebnerd_large`
-(D33): 1,219,746 EB-NeRD impressions against the demo's 24,724. 251 tests pass.
-The A1 recall quiz is done, the numbers ledger (`reports/NUMBERS.md`) exists, and D34's
-evidence is gathered. **D34 decided: option B** (symmetric core + EB-NeRD session). **D34a, D35 decided. Step A2.1 done:** `features/history.py`, the multi-scale decayed user vectors,
-category shares and hours-since-last-click, with the boundary guard. 25 tests,
-9 of 9 mutations caught. **Step A2.2 done:** `features/article.py`, freshness from the
-earliest evidence (D34c) and label-free exposure share at 1 h / 24 h (D34b). **Phase A2 complete** (tag `a2-phase-2-complete`): all Q1 features, the Q9 quarantine,
-and the leakage test extended. 304 tests pass. The A2 recall quiz is answered (2 of 3,
-Q2 re-taught; see `LEARNING.md`).
+**Phases A0, A1, A2 are complete** (tags `a2-phase-0/1/2-complete`). 304 tests pass.
+- **A1:** the store holds a 5% user sample of `ebnerd_large` (D33): 1,219,746 EB-NeRD
+  impressions.
+- **A2:** every Q1 feature is built (`src/newsrec/features/`) under an asserted allowlist
+  (D34, D34a/b/c, D35). The Q9 quarantine is in `unavailable.py`, and the leakage test
+  is extended with future-deletion and label-blindness properties on both datasets.
+- `reports/NUMBERS.md` is the numbers ledger: every figure we would quote, with its
+  source.
 
 **HANDOFF 2026-09-19. Chaitanya is continuing in a new chat. Start here:**
 1. **Confirm the scoped schedule. It was PROPOSED, not agreed.** The deadline is
-   2026-09-20 and ~15 h of phases remain. The proposal:
+   **2026-09-20** and ~15 h of planned phases remain, which does not fit. The proposal:
    - A3 re-ranker, trained on the supplied inview lists first.
    - A4 with MIND NRMS only (drop-order item 3), keeping the paired bootstrap CI.
    - A5 and A6 trimmed to spec. The ledger and audit already cover much of Q4.
 2. **Teach (R1)** gradient-boosted trees and LambdaRank (versus scoring each candidate
    independently) before any A3 code.
-3. **R6 forks for A3:** D36, which rows train the re-ranker (the train split? with
-   what history snapshot?), and D37, the candidate regimes (supplied inview vs
-   retrieved top-K). Landmine 4 applies: LambdaRank needs rows grouped contiguously
-   by impression, which must be asserted.
+3. **R6 forks for A3:**
+   - **D36:** which rows train the re-ranker (the train split? with what history
+     snapshot?).
+   - **D37:** the candidate regimes (supplied inview vs retrieved top-K).
+   - Landmine 4 applies: LambdaRank needs rows grouped contiguously by impression, and
+     that must be asserted.
 4. **Explanation style:** plain problem first, then a worked example, then the term.
-   Chaitanya asked for this on 2026-09-19 after a dense summary.
+   Chaitanya asked for this on 2026-09-19 after a dense summary. It is also in auto-memory.
 
 **Feature table entry point:** `features/assemble.build_feature_table(dataset, target,
 all_impressions, history, articles, emb_ids, emb)`. Fixed cost ~35 s (MIND) / ~75 s
-(EB-NeRD) per call. Build per split and cache to `data/processed/` (gitignored).
-**Schedule: 2026-09-18, two days to the deadline, with ~19 h of phase budget unspent.
-The pre-agreed drop order below is now live.**
+(EB-NeRD) per call. Build per split and cache the result to `data/processed/`
+(gitignored), rather than rebuilding.
+
+**Watch the test-suite time:** 7 min, because the Q9 tests rebuild real feature tables.
+Use `pytest -k` for inner loops.
 
 A1 is finished and frozen at `/home/csharp/IRE/A1` (tag `phase-5-complete`). This repo is
 a clone of it with full history and all six A1 tags, so every A1 module, decision and
 error-log entry is available here. **240 A1 tests pass in this location** — verified after
 the move, not assumed.
 
-**Deadline: 20 September 2026.** Five days from the A0 session.
+**Deadline: 20 September 2026.**
 
 ---
 
