@@ -15,28 +15,34 @@
 - `reports/NUMBERS.md` is the numbers ledger: every figure we would quote, with its
   source.
 
-**SESSION 2026-09-19 (afternoon). Chaitanya away; asked for independent work first.**
-Done alone, with every fork taken at its recommendation and marked PROVISIONAL in
-`ARCHITECTURE.md`:
-- **A3 / Q2 re-ranker built and measured** (commit `85a8f43`). LambdaRank on the cached
-  feature tables (`data/processed/features/`). Local test AUC: EB-NeRD **0.5457 → 0.7428**,
-  MIND 0.6097 → 0.6144. Paired CIs exclude zero on AUC for both. D36 and D37 provisional.
-- **A real bug found and fixed:** MIND impression ids repeat across train and dev. See the
-  error log.
-- **Leaderboard pipeline (D38) built:** `scripts/run_submission_lgbm.py`, user-partitioned
-  and resumable (a rerun skips finished groups). EB-NeRD full run **in progress**
-  (~2.7 h). Scores go to `data/processed/submission/lgbm_scores_ebnerd/`, the file to
-  `reports/submissions/ebnerd_lgbm.{txt,zip}`. MIND is next (~93M rows).
-- **Q3 prepared, not run:** NRMS code and tests exist. **D39/D40 await Chaitanya.**
+**OVERNIGHT 2026-09-19/20 — where everything stands.** Commits `85a8f43` … `5f35d89`.
 
-**When Chaitanya is back, in order:**
-1. Confirm or reverse D36, D37 and D38 (provisional).
-2. Teach (R1) GBDT and LambdaRank against the real numbers above. Then decide D39/D40.
-3. Upload both leaderboard zips after `validate_submission.py`. **EB-NeRD's Codabench
-   needed a self-hosted worker in A1** (see `AI_USAGE.md`), so allow time for it.
-4. Remaining: Q2 retrieved regime (`run_retrieved_regime.py`, written, not run), Q3 runs,
-   Q4 p99 latency for the two-stage pipeline, Q5 slices over the new model, Q9
-   with/without table for A2, then the design note.
+**Done and committed:**
+- **Q2 (A3):** LambdaRank re-ranker, both candidate regimes, paired CIs. D36/D37/D38
+  confirmed by Chaitanya after being explained option by option.
+- **Q5:** `run_extended_eval.py` — seven metrics × five slices × CIs, both datasets.
+- **Q9:** `run_q9_ablation.py` — EB-NeRD prices the leak at **+0.0162 AUC**
+  [0.0153, 0.0172]; MIND's arm is unmeasurable (truncated forward window) and says so.
+- **Q4:** `benchmark_serving.py` — footprint 283/475 MB, p99 **360 ms (MIND) / 2,369 ms
+  (EB-NeRD)**, both failing the 100 ms SLA, with the decomposition that explains why.
+- **Leaderboards:** both files built and validated. `reports/submissions/{mind,ebnerd}_lgbm.zip`.
+- **Design note:** `reports/design_note_a2.md`, §1–§3 and §5–§9 written from measured
+  numbers. Render with `scripts/build_design_note_pdf.py` (11pt, 1in, 6-page target).
+- **Docs:** `SCALE_NOTES.md` has the leaderboard-scale run and what breaks at 10×;
+  `NUMBERS.md` §I.2/I.3 carry every figure; `AI_USAGE.md` and `README.md` updated.
+
+**In flight overnight:** `run_nrms.py` (Q3) — 4 arms × 3 epochs on MIND then EB-NeRD,
+60,000 sampled train impressions per arm (**D41**, because a full epoch measured ~55 min).
+MIND was at val AUC 0.5967 → 0.6039 over its first two epochs. Results land in
+`reports/nrms_ablation_{mind,ebnerd}_test.csv`; the note's §4 is the only gap left.
+
+**Morning checklist for Chaitanya:**
+1. Codabench: confirm both submissions are **Finished with a score**, and screenshot both
+   leaderboards (Q5/Q7). The EB-NeRD worker needs `codabench/Dockerfile.worker-upstream`,
+   not the released image — see the error log.
+2. Read §4 of the design note once NRMS lands, then render the PDF.
+3. Run the full test suite once (7 min) — it was not re-run after tonight's changes.
+4. GitHub Classroom repo still not located; A2 has no remote.
 
 **Feature table entry point:** `features/assemble.build_feature_table(dataset, target,
 all_impressions, history, articles, emb_ids, emb)`. Fixed cost ~35 s (MIND) / ~75 s
