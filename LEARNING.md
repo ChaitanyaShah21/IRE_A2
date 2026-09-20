@@ -725,3 +725,58 @@ per-request) and do the last tier in plain NumPy.
    dataset where 92.7% of clicks are on fresh articles?
 2. Why does the new path need a test asserting it equals the old one, rather than just its
    own tests?
+
+### Concept 4 — a measurement taken once is not a measurement
+
+**Analogy.** You time your walk to campus once, get eleven minutes, and write "eleven
+minutes" in your notes. You walked it on a Sunday. On Monday there is a queue at the
+crossing, and in the rain the underpass floods. Eleven minutes was true; it just was not
+the number you needed.
+
+**Technical.** Three times in one day a latency measurement on this laptop was disbelieved
+and re-run, and twice the re-run changed the conclusion:
+
+1. **EB-NeRD serving, run 1** gave a batch p99 of 22,398 ms — a 665x apparent speedup for
+   the new path. Re-run as a control: 14,468 ms. The tail was real; its size was not.
+2. **Run 3, on a freshly booted VM,** gave 2,743 ms — and *that* reconciles with the
+   2,352 ms recorded on 2026-09-19. So the 14–22 s figures were memory-state amplification
+   on a VM that had been up a day with ~14M pages swapped out.
+3. **The same fresh VM made stage 1 five times worse** (retrieve p99 24 → 121 ms), because
+   a cold page cache turns the 193 MB embedding matrix into disk reads. That is what
+   withdrew the "we meet a p99 < 100 ms SLA" claim.
+
+Each of the three runs, taken alone, supports a *different wrong* conclusion. The project's
+2026-09-16 error-log entry already said absolute milliseconds here move up to 4.7x between
+dates; this is that, generalised into a rule.
+
+**Comprehension checks (owed):**
+1. Why does timing both paths *in the same process on the same requests* rescue the
+   comparison, even when neither absolute number is trustworthy?
+2. Run 3 was better for the batch path and worse for stage 1. Explain both in one sentence
+   each.
+3. A production system adds replicas when load rises. Why does check 2 make that dangerous,
+   and what is the fix?
+
+### Concept 5 — the gap between what code says and what it does
+
+**Analogy.** A recipe says "rest the dough between folds". Someone rewrites the method so
+each fold is a separate instruction card, and every card starts with "make fresh dough".
+Each card is correct. Followed in order, the dough is never the same dough, and no card is
+wrong.
+
+**Technical.** `nrms.train` seeds its random generator and builds its optimiser once per
+*call*, which was right when it owned the whole epoch loop. Epoch selection then required
+calling it one epoch at a time from outside — so per-call setup became per-epoch setup.
+Result: every epoch drew the **same** negatives in the same order (contradicting
+`training_samples`' own docstring) and threw away Adam's momentum.
+
+Found by re-reading the loop, not by any test failing — because nothing was *broken*. The
+code did exactly what it said; it just no longer did what the docstrings claimed the system
+did.
+
+**Comprehension checks (owed):**
+1. Why does this **not** invalidate D41's ablation conclusions, even though it changes the
+   absolute numbers?
+2. Why was it left unfixed for the word-level run rather than corrected immediately?
+   (Same reason Kaggle was rejected — name the confound.)
+3. What kind of bug can a test suite never catch, and what is the only thing that does?
