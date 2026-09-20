@@ -6,7 +6,7 @@
 
 ## Where we are right now
 
-**Phases A0, A1, A2 are complete** (tags `a2-phase-0/1/2-complete`). 304 tests pass.
+**All phases A0–A6 are complete** (tags `a2-phase-0/1/2/3/4-complete`, `a2-submission-ready`). 326 tests pass.
 - **A1:** the store holds a 5% user sample of `ebnerd_large` (D33): 1,219,746 EB-NeRD
   impressions.
 - **A2:** every Q1 feature is built (`src/newsrec/features/`) under an asserted allowlist
@@ -102,10 +102,10 @@ Budget ≈ 22 h across five days. Each phase ends: living-doc update (R12) → c
 | A0 | Migration & setup | 1 h | ✅ done — tag `a2-phase-0-complete` |
 | A1 | Data scale-up: EB-NeRD subsample (D33) | 2 h | ✅ done — tag `a2-phase-1-complete` |
 | A2 | Q1 — behavioural features + boundary contract (D34, D35) | 4 h | ✅ done (~4 h) — tag `a2-phase-2-complete` |
-| A3 | Q2 — trained re-ranker, two candidate regimes (D36, D37) | 4 h | ⬜ **next** |
-| A4 | Q3 — NRMS baseline, improvement, ablation, paired CI (D38–D40) | 5 h | ⬜ |
-| A5 | Q4 serving/scale + Q5 extended eval + leaderboards | 3 h | ⬜ |
-| A6 | Q6/Q7 — design note & deliverables | 3 h | ⬜ |
+| A3 | Q2 — trained re-ranker, two candidate regimes (D36, D37) | 4 h | ✅ done — tag `a2-phase-3-complete` |
+| A4 | Q3 — NRMS baseline, improvement, ablation, paired CI (D39–D41) | 5 h | ✅ done — tag `a2-phase-4-complete` |
+| A5 | Q4 serving/scale + Q5 extended eval + Q9 + leaderboards | 3 h | ✅ done — both leaderboards scored |
+| A6 | Q6/Q7 — design note & deliverables | 3 h | ✅ done — `reports/design_note_a2.pdf`, 7 pp |
 
 **Drop order if the schedule slips, agreed in advance 2026-09-15.**
 1. Extra ablation arms beyond Q3.3's minimum.
@@ -182,7 +182,7 @@ submissions. These are named requirements, not depth.
    test ID left the same remainder under both. Fixed by adding user 110 (remainder 10
    vs 0).
 
-### Phase A2 — Q1 behavioural features (2026-09-18, in progress)
+### Phase A2 — Q1 behavioural features (2026-09-18)
 1. ✅ **D34 = option B, D34a = label-free session features, D35 = multi-scale decay.**
 2. ✅ **`src/newsrec/features/history.py`:**
    - `decay_weights`: ages measured from the newest click; refuses negative or
@@ -256,19 +256,28 @@ submissions. These are named requirements, not depth.
 
 ## Next step
 
-**Phase A2 — Q1 behavioural features (D34, D35).** The A1 recall quiz was answered
-2026-09-15: 2 of 3 correct, the embedding-reuse check re-taught (see `LEARNING.md`).
+**Nothing outstanding in the code.** Every graded deliverable is complete as of
+2026-09-20 and `main` is tagged `a2-submission-ready`:
 
-**Waiting on Chaitanya: D34, the feature allowlist.** Evidence is gathered and three
-options (symmetric core / + EB-NeRD session / + demographics) are written up in
-`ARCHITECTURE.md`. Nothing is implemented until he picks one.
-Then: teaching on exponential decay (R1), then the feature builders.
-The EB-NeRD features must use the new store's `history_timestamps`. MIND's recency can
-only use list position.
+| Q | Deliverable | Where |
+|---|---|---|
+| Q1 | Behavioural features + boundary enforcement | `src/newsrec/features/`, `tests/test_no_leakage.py` |
+| Q2 | Trained re-ranker, both candidate regimes, before/after with paired CIs | `reports/rerank_*.csv`, `reports/retrieved_regime_*.csv` |
+| Q3 | NRMS reproduced, time term, 4-arm ablation, paired CI | `reports/nrms_ablation_*.csv` |
+| Q4 | Footprint, per-stage p50/p99, cost/QPS, 10× analysis | `reports/serving_benchmark_*.json`, `SCALE_NOTES.md` |
+| Q5 | Seven metrics × five slices × CIs; both leaderboards | `reports/extended_eval_*.csv`, `reports/figures/` |
+| Q6 | Design note, 7 pages | `reports/design_note_a2.pdf` |
+| Q7 | README, AI usage log, prompt log, screenshots | `README.md`, `AI_USAGE.md`, `reports/ai_transcripts/` |
+| Q9 | With/without serving-unavailable features, leakage test | `reports/q9_serving_ablation_*.csv` |
 
-**Teaching owed before Phase A3 code** (R1, in chat): gradient-boosted decision trees and
-why `lambdarank` differs from classifying each candidate independently.
-**Before Phase A4:** NRMS's two attention layers, and what makes a bootstrap *paired*.
+**Open, optional:** a 6-epoch MIND NRMS re-run is in flight on branch `nrms-6-epochs`
+(D41 trained the reported arms for 3). It is a bonus: if it finishes before the deadline
+and the validation curve has flattened, §4 of the design note gets updated numbers;
+otherwise `main` ships unchanged.
+
+**Teaching still owed if a viva happens:** comprehension checks on NRMS's two attention
+layers and on what makes a bootstrap *paired* — both were taught on 2026-09-19/20 but
+never followed by questions (noted in `LEARNING.md`).
 
 ---
 
@@ -360,11 +369,11 @@ labelled estimate with its reasoning.
 
 ## Open questions
 
-- **D33's subsample size** — to be decided in Phase A1 against measured ingest time and
-  the width of the resulting confidence interval, not guessed.
-- **GitHub Classroom repo for A2** — invite link not yet located. A1's was never found
-  either. Does not block any local work; only affects where this eventually gets pushed.
-  A2 currently has **no git remote**, deliberately.
+- **D33's subsample size** — **resolved in Phase A1**: 5% of `ebnerd_large`'s users
+  (`user_id % 100 < 5`), 48,666 users and 1,219,746 impressions, rebuilt in 40 s.
+- **GitHub Classroom** — there is none for A2. The deliverable repository is public at
+  https://github.com/ChaitanyaShah21/IRE_A2 (remote `origin`), and the design note links
+  it.
 
 ---
 
