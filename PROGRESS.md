@@ -31,17 +31,21 @@
 - **Docs:** `SCALE_NOTES.md` has the leaderboard-scale run and what breaks at 10×;
   `NUMBERS.md` §I.2/I.3 carry every figure; `AI_USAGE.md` and `README.md` updated.
 
-**In flight overnight:** `run_nrms.py` (Q3) — 4 arms × 3 epochs on MIND then EB-NeRD,
-60,000 sampled train impressions per arm (**D41**, because a full epoch measured ~55 min).
-MIND was at val AUC 0.5967 → 0.6039 over its first two epochs. Results land in
-`reports/nrms_ablation_{mind,ebnerd}_test.csv`; the note's §4 is the only gap left.
+- **Q3 (A4), finished 05:05:** NRMS reproduced and beaten. EB-NeRD **+0.0864 AUC
+  [0.0852, 0.0877]** from the pre-registered time term; MIND's equivalent is null on AUC
+  (+0.0053 MRR). Tags `a2-phase-3-complete`, `a2-phase-4-complete`.
+- **Design note complete**, 7 pages, no gaps: `reports/design_note_a2.{md,pdf}`.
+- **326 tests pass** (re-run 00:16 after the night's changes).
 
 **Morning checklist for Chaitanya:**
 1. Codabench: confirm both submissions are **Finished with a score**, and screenshot both
    leaderboards (Q5/Q7). The EB-NeRD worker needs `codabench/Dockerfile.worker-upstream`,
    not the released image — see the error log.
-2. Read §4 of the design note once NRMS lands, then render the PDF.
-3. Run the full test suite once (7 min) — it was not re-run after tonight's changes.
+2. **Decide the page count.** The note is 7 pages against Q6's 6-page *target* (a
+   guideline; it allows more when content justifies it). To reach 6, cut one table —
+   the retrieved-regime table in §3.2 is the most expendable, since its numbers live in
+   `reports/retrieved_regime_*.csv`. Rendering: `scripts/build_design_note_pdf.py`.
+3. Read §4 and §7 — those carry the two claims a viva would probe hardest.
 4. GitHub Classroom repo still not located; A2 has no remote.
 
 **Feature table entry point:** `features/assemble.build_feature_table(dataset, target,
