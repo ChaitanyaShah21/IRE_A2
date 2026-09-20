@@ -1,0 +1,591 @@
+<!doctype html><html><head><meta charset='utf-8'><style>
+@page { size: A4; margin: 25.4mm; }
+body { font-family: "DejaVu Serif", Georgia, serif; font-size: 11pt; line-height: 1.22;
+       color: #111; margin: 0; }
+h1 { font-size: 16pt; margin: 0 0 .4em; }
+h2 { font-size: 11.5pt; margin: .55em 0 .22em; border-bottom: 1px solid #ccc;
+     padding-bottom: 2px; }
+h3 { font-size: 10pt; margin: .5em 0 .2em; }
+p  { margin: .28em 0; }
+ul, ol { margin: .3em 0; padding-left: 1.2em; }
+li { margin: .15em 0; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt;
+       background: #f4f4f4; padding: 0 2px; }
+pre { background: #f6f6f6; padding: .5em .7em; font-size: 8.4pt; overflow-x: auto;
+      border-left: 2px solid #ddd; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 8.6pt; margin: .3em 0;
+        page-break-inside: avoid; }
+th, td { border: 1px solid #bbb; padding: 1.8px 4px; text-align: left; }
+th { background: #efefef; }
+img { max-width: 76%; height: auto; display: block; margin: .4em auto;
+      page-break-inside: avoid; }
+em { color: #444; }
+blockquote { margin: .5em 0 .5em .8em; padding-left: .7em; border-left: 2px solid #ccc;
+             color: #444; }
+h2, h3 { page-break-after: avoid; }
+</style></head><body><h1>Learning from Click-Logs: a Two-Stage Retrieve-then-Rank System for MIND and EB-NeRD</h1>
+<p><strong>CS4.406 Information Retrieval &amp; Extraction — Assignment 2</strong> · Chaitanya Shah
+Done <strong>solo</strong>, which the specification permits for this team assignment.
+Code: <code>src/newsrec/</code> · decision log: <code>ARCHITECTURE.md</code> (A1's D1–D32, A2's D33–D40) ·
+every quoted figure traces to <code>reports/NUMBERS.md</code>.</p>
+<hr />
+<h2>1. What was built, and the one idea behind it</h2>
+<p>A1 ended on a measured gap: <strong>BM25 and embedding retrieval contain no time term</strong> — a
+structural fact about both formulas — while <strong>92.7% (MIND) / 93.5% (EB-NeRD) of real clicks
+are on fresh articles</strong>. Three independent routes reached it, the sharpest being that
+train-window popularity predicts EB-NeRD clicks in the <em>wrong</em> direction (AUC 0.4647).</p>
+<p>A2 acts on it. The A1 scorers are not replaced; <strong>they become features</strong> of a trained
+re-ranker that also sees time:</p>
+<pre><code> A1, unchanged                          A2, new
+ BM25 index ┐                    ┌ features/ : recency-decayed history (3 half-lives),
+ embeddings ├── scores as ──────►│             category affinity, freshness, windowed
+ availability filter             │             exposure share, session context
+            │                    └────────────────────┬───────────────────────────────
+            └── top-K (K=100) ──────────────────────► rank/gbdt.py  LambdaRank (LightGBM)
+                                                      rank/nrms.py  NRMS baseline (Q3)
+                                                                    │
+                                        metrics · slices · paired bootstrap (A1's, extended)
+</code></pre>
+<p>Because <code>cos_inf</code> (infinite half-life) reproduces A1's semantic score exactly and <code>bm25</code>
+is A1's lexical score, <strong>"before re-ranking" is one column of "after"</strong> — the Q2
+comparison is two orderings of the same candidate list, not two unrelated systems.</p>
+<p><strong>Two candidate sets, deliberately kept apart (D37).</strong> Both leaderboards ask us to
+re-rank a <em>supplied</em> list (<code>article_ids_inview</code> / <code>impressions</code>); Q2 also asks us to
+<em>retrieve</em> top-K from the whole corpus. These are different operations on different
+candidate sets, and conflating them is the easiest way to report a meaningless number.
+Every table below says which it is.</p>
+<h2>2. Q1 — features, and the boundary that makes them honest</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>MIND</th>
+<th>EB-NeRD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cos_short / cos_medium / cos_inf</code> — decayed user profile · candidate (D35)</td>
+<td>✓ (3/10/∞ positions)</td>
+<td>✓ (1 d / 7 d / ∞)</td>
+</tr>
+<tr>
+<td><code>cat_share_short / medium / inf</code> — recency-weighted category affinity</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>bm25</code> — A1's lexical score, N=100 (D31)</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>freshness_hours</code> — T − min(published_time, first_seen) (D34c)</td>
+<td>✓ (first_seen only)</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>exposure_share_1h / _24h</code> — label-free share, strictly before T (D34b)</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>hours_since_last_click</code> (D35)</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>session_position</code>, <code>minutes_since_session_start</code>, <code>device_type</code> (D34a)</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The feature set is an allowlist, never a denylist</strong>, and the builder <em>asserts</em> its output
+columns equal keys + label + that list. This is not tidiness: <code>total_pageviews</code> and
+<code>total_inviews</code> already sit in our <code>articles.parquet</code> and are whole-dataset aggregates
+containing the future, so any builder that loops over article columns picks them up and
+nothing errors.</p>
+<p><strong>Boundary enforcement (Q1.4, Q9.2).</strong> <code>tests/test_no_leakage.py</code> asserts two <em>properties</em>
+on real validation data for both datasets, rather than a list of per-feature checks:
+<em>future deletion</em> (delete every impression after τ; features at or before τ must be
+byte-identical) and <em>label blindness</em> (shuffle the clicks; every feature must be
+identical). A new feature is covered automatically. The suite is mutation-verified: four
+realistic forward leaks were planted in production code and <strong>all four were caught</strong> —
+but only after extending the check to MIND, because on EB-NeRD <code>published_time</code> almost
+always wins the <code>min</code>, so the <code>first_seen</code> path is never exercised there.</p>
+<p><strong>Three landmines, each measured rather than assumed.</strong> EB-NeRD's catalogue runs a month
+past the test week (2,148 articles published after the train week ends), so <strong>no
+catalogue-wide statistic is ever a feature</strong>. Its <code>session_id</code> is shared by multiple users
+(1,032 ids), so sessions are keyed <strong>(user, session)</strong> — keyed by id alone the longest
+"session" is 14 days, keyed properly 29 minutes. And 1,810 candidate rows are shown
+<em>before</em> their <code>published_time</code>, which is why freshness takes the earliest evidence of
+existence.</p>
+<h2>3. Q2 — the trained re-ranker, before and after</h2>
+<p><strong>Model (D36).</strong> LightGBM with the <code>lambdarank</code> objective: it is scored only on ordering
+each impression's clicked candidates above its unclicked ones, weighted by how much a swap
+would move nDCG. Trained on the train split, tree count chosen by validation nDCG@10,
+<strong>every number below from the local test split</strong>, which chose nothing. Hyperparameters were
+fixed before any result was seen. LightGBM learns impression boundaries from group <em>sizes</em>
+alone, so a shuffle trains happily and ranks garbage; <code>group_sizes</code> derives them from the
+ids and refuses non-contiguous input.</p>
+<h3>3.1 Supplied inview lists — what the leaderboards grade</h3>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>MIND AUC</th>
+<th>MIND nDCG@10</th>
+<th>EB-NeRD AUC</th>
+<th>EB-NeRD nDCG@10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>random</td>
+<td>0.4982</td>
+<td>0.2756</td>
+<td>0.5007</td>
+<td>0.4288</td>
+</tr>
+<tr>
+<td>bm25 (A1)</td>
+<td>0.5641</td>
+<td>0.3265</td>
+<td>0.5041</td>
+<td>0.4305</td>
+</tr>
+<tr>
+<td>semantic (A1) — <em>before</em></td>
+<td>0.6097</td>
+<td>0.3588</td>
+<td>0.5457</td>
+<td>0.4585</td>
+</tr>
+<tr>
+<td><strong>LambdaRank (A2)</strong> — <em>after</em></td>
+<td><strong>0.6144</strong></td>
+<td><strong>0.3636</strong></td>
+<td><strong>0.7428</strong></td>
+<td><strong>0.6250</strong></td>
+</tr>
+<tr>
+<td>paired gain over <em>before</em></td>
+<td>+0.0048 <strong>[0.0012, 0.0080]</strong></td>
+<td>+0.0048</td>
+<td>+0.1971 <strong>[0.1953, 0.1989]</strong></td>
+<td>+0.1665</td>
+</tr>
+</tbody>
+</table>
+<p>Both AUC gains exclude zero. <strong>The asymmetry is the finding, not a disappointment.</strong>
+Importances say why: on EB-NeRD freshness (38%) and exposure share (34%) carry 73% of the
+gain; on MIND <code>cos_inf</code> leads (27%) and the model saturates after 18 trees — validation
+nDCG@10 is flat from ~20 to 300 trees while training climbs 0.396 → 0.457. Single-feature
+AUCs on MIND put freshness at 0.534 and exposure at 0.533 against similarity's 0.610,
+because <strong>MIND ships no publication times and no history timestamps</strong>: its freshness is
+inferred from first appearance in a sampled log and its recency can only use list
+position. The time signal helps where the data records time, which is also why the two
+datasets' decay features are not comparable to each other.</p>
+<h3>3.2 Retrieved top-K (K = 100) — our own candidate generation</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MIND</th>
+<th>EB-NeRD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>recall@100, in-circulation pool</td>
+<td>2.6%</td>
+<td>2.5%</td>
+</tr>
+<tr>
+<td>impressions with ≥1 click retrieved</td>
+<td>798 of 21,289</td>
+<td>4,704 of 186,721</td>
+</tr>
+<tr>
+<td>MRR, retrieval order → re-ranked</td>
+<td>0.070 → <strong>0.260</strong></td>
+<td>0.052 → <strong>0.567</strong></td>
+</tr>
+<tr>
+<td>AUC, retrieval order → re-ranked</td>
+<td>0.567 → 0.786</td>
+<td>0.508 → 0.968</td>
+</tr>
+</tbody>
+</table>
+<p>Two honest readings. First, <strong>recall@K is the ceiling</strong>: re-ranking cannot rescue the
+97.5% of impressions whose clicked article never entered the top 100, which is why both
+leaderboards score a supplied list instead. Second, <strong>EB-NeRD's 0.968 is not a better
+system than §3.1's 0.743</strong>: the 99 negatives here were drawn from a 125,541-article corpus
+by text similarity, so most were not in circulation that day, and freshness separates them
+almost trivially. Easy negatives inflate AUC. The supplied-list number is the one to
+believe.</p>
+<h2>4. Q3 — baseline reproduced, then beaten</h2>
+<p><strong>Baseline (D39): NRMS</strong> (Wu et al., 2019) — multi-head self-attention over the user's
+clicked articles, then additive attention to pool them, scored by dot product against the
+candidate, trained with one click against four same-impression negatives. <strong>One documented
+deviation:</strong> the news encoder is a learned projection of our existing 384-dim multilingual
+sentence embeddings instead of word-level attention over title tokens. That is what makes
+it trainable on a GPU-less laptop; the user encoder, objective and scoring are the paper's.</p>
+<p><strong>The one principled change (D40): a time term.</strong> NRMS has no time input at all. A small
+MLP over (log freshness, exposure share 1 h, exposure share 24 h) is added to the click
+score, zero-initialised so training <em>starts</em> at exactly the baseline. The change was
+chosen from A1's measurements <strong>before</strong> any NRMS result existed — A1's Finding 5 is that
+selecting a claim after seeing its result is a tautology in disguise.</p>
+<p><strong>Ablation (Q3.3) and significance (Q3.4).</strong> Four arms, identical in everything but the
+time inputs, each trained on the same seeded 60,000 impressions (D41) and evaluated on the
+whole test split. Paired bootstrap, 1,000 resamples, differences against the baseline.</p>
+<table>
+<thead>
+<tr>
+<th>Arm</th>
+<th>MIND AUC</th>
+<th>paired Δ</th>
+<th>EB-NeRD AUC</th>
+<th>paired Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nrms (reproduced baseline)</td>
+<td>0.6146</td>
+<td>—</td>
+<td>0.5874</td>
+<td>—</td>
+</tr>
+<tr>
+<td>+ freshness</td>
+<td>0.6159</td>
+<td>+0.0013 [0.0004, 0.0022]</td>
+<td>0.7014</td>
+<td>+0.1141 [0.1126, 0.1155]</td>
+</tr>
+<tr>
+<td>+ exposure share</td>
+<td>0.6122</td>
+<td><strong>−0.0024</strong> [−0.0032, −0.0014]</td>
+<td>0.6244</td>
+<td>+0.0370 [0.0359, 0.0380]</td>
+</tr>
+<tr>
+<td><strong>+ both — the pre-registered change</strong></td>
+<td>0.6144</td>
+<td>−0.0002 [−0.0011, 0.0008]</td>
+<td><strong>0.6738</strong></td>
+<td><strong>+0.0864 [0.0852, 0.0877]</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>On EB-NeRD the claim holds with room to spare: +0.0864 AUC, CI clear of zero</strong>, and
++0.0628 MRR. <strong>On MIND it does not</strong>: the pre-registered arm is indistinguishable from the
+baseline on AUC (−0.0002, interval straddling zero) though it does lift MRR
+(+0.0053 [0.0038, 0.0067]).</p>
+<p>What the ablation buys over a single "improved" number: it <strong>localises</strong> the gain
+(freshness carries it; exposure alone adds +0.037 and <em>subtracts</em> when combined, the two
+being correlated — a fresh article is also a heavily-pushed one); it <strong>reproduces the Q2
+ordering in a different model class</strong> (LambdaRank importances also rank freshness first on
+EB-NeRD and find exposure inverse on MIND), which is the kind of agreement that makes a
+finding believable; and it <strong>says where the change does not transfer, and why</strong> — MIND has
+no publication times and no history timestamps, so there is less time signal to add.</p>
+<p><strong>Two limits we state rather than let a reader discover.</strong> The baseline is trained on
+60,000 impressions for 3 epochs and its validation AUC was <strong>still rising at the last
+epoch</strong>, so these are <em>undertrained</em> NRMS numbers — the ablation is valid because every arm
+has the same budget, but the absolute levels understate a fully-trained NRMS. And
+<code>+ freshness</code> beats the pre-registered <code>+ both</code> on both datasets; we report that as an
+ablation observation rather than promoting it to the headline after the fact, because
+choosing the winner after seeing the results is precisely the error A1's Finding 5
+records.</p>
+<h2>5. Q4 — serving: memory, p99, and cost per 1,000 queries</h2>
+<p>Measured per <strong>single user request</strong> (K = 100), single process, <strong>with nothing else running</strong>
+— NRMS training was suspended for the measurement, because A1's error log already contains
+a conclusion that had to be withdrawn after being taken on a contended machine.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MIND</th>
+<th>EB-NeRD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>resident footprint, total</td>
+<td><strong>283 MB</strong></td>
+<td><strong>475 MB</strong></td>
+</tr>
+<tr>
+<td>— largest items</td>
+<td>embeddings 100 MB · user vectors 77 MB · exposure index 71 MB · BM25 19 MB</td>
+<td>embeddings 193 MB · exposure index 123 MB · user vectors 61 MB · session table 44 MB</td>
+</tr>
+<tr>
+<td>start-up (context build)</td>
+<td>5.2 s</td>
+<td>137 s at leaderboard scale</td>
+</tr>
+<tr>
+<td>stage 1, retrieve top-100</td>
+<td>p50 <strong>9.0 ms</strong>, p99 23.7 ms</td>
+<td>p50 <strong>9.6 ms</strong>, p99 22.2 ms</td>
+</tr>
+<tr>
+<td>stage 2, build features</td>
+<td>p50 <strong>223.0 ms</strong>, p99 348.0 ms</td>
+<td>p50 <strong>439.0 ms</strong>, p99 2,352 ms</td>
+</tr>
+<tr>
+<td>stage 3, score 100 candidates</td>
+<td>p50 <strong>3.2 ms</strong>, p99 9.0 ms</td>
+<td>p50 <strong>4.3 ms</strong>, p99 6.9 ms</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td>p50 237 ms, <strong>p99 360 ms</strong></td>
+<td>p50 452 ms, <strong>p99 2,369 ms</strong></td>
+</tr>
+<tr>
+<td>throughput per core</td>
+<td>4.2 q/s</td>
+<td>1.5 q/s</td>
+</tr>
+<tr>
+<td><strong>cost per 1,000 queries</strong> (at $0.04 / vCPU-hour)</td>
+<td><strong>$0.0027</strong></td>
+<td><strong>$0.0077</strong></td>
+</tr>
+<tr>
+<td>cores for 1,000 QPS</td>
+<td>239</td>
+<td>689</td>
+</tr>
+<tr>
+<td><strong>p99 &lt; 100 ms SLA</strong></td>
+<td><strong>not met</strong></td>
+<td><strong>not met</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Little's law check.</strong> With one request in flight X ≤ 1/R: MIND's R = 0.237 s gives
+X ≤ 4.2 q/s, exactly the measured per-core throughput — so the only way past it is to cut R
+or add concurrency.</p>
+<p><strong>We fail the SLA for an architectural reason, not an algorithmic one.</strong> Stage 1 (9 ms) and
+stage 3 (3–4 ms) are inside budget; <strong>feature assembly is 93–97% of the request</strong>, because
+we call a <em>batch</em> builder once per request:</p>
+<ul>
+<li>Only <strong>13.5% (MIND) / 16.8% (EB-NeRD)</strong> of that stage is per-user profile work — three
+  decayed profiles, three category-share tables, the BM25 query — measured separately. So
+  "precompute user profiles nightly" is necessary but <strong>not</strong> sufficient; it buys ~30 ms of
+  223 ms.</li>
+<li>The remainder is fixed per-call cost: DataFrame joins against whole-dataset tables (a
+  1.2M-row session table, 125k articles, a 65k-entry category map) to answer a 100-row
+  question. The same code processes <strong>~11,500 rows/s in bulk</strong> (2.25M rows in 195 s) and
+  <strong>~450 rows/s one request at a time</strong> — a ~26× penalty that is all overhead.</li>
+</ul>
+<p><strong>What would meet p99 &lt; 100 ms</strong> (a projection, not a measurement): precompute user
+profiles into a key-value store (−30 ms), replace per-request joins with array lookups
+keyed by article row (the targets are static within an hour), and cache article features by
+(article, hour) — the structure §8 also wants at 10×. Stages 1 and 3 sum to ~13 ms, so a
+~20 ms lookup path puts p99 near 40 ms and cost near $0.0003 per 1,000. <strong>We did not build
+it</strong>, and saying so beats quoting a number we did not measure. In batch the same system is
+cheap and fast: 206M rows scored in 155 min, ~22,000 rows/s. It is a strong batch scorer
+and a weak online one.</p>
+<h2>6. Q5 — extended evaluation, sliced</h2>
+<p>All seven metrics, over the supplied-inview pipeline on the local test split, with
+1,000-resample percentile CIs. Slices are D26's: cold = history ≤ 5 articles; head/tail by
+exposure, where an impression is head only if <em>every</em> clicked article is in the head set
+(2,922 MIND / 243 EB-NeRD impressions are mixed and counted in neither, rather than
+silently assigned).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>MIND: semantic (A1) → LambdaRank</th>
+<th>EB-NeRD: semantic (A1) → LambdaRank</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>all</td>
+<td>0.6097 → 0.6144, paired <strong>+0.0048 [0.0012, 0.0080]</strong></td>
+<td>0.5457 → 0.7428, <strong>+0.1971 [0.1953, 0.1989]</strong></td>
+</tr>
+<tr>
+<td>cold (n = 3,904 / 680)</td>
+<td>0.5642 → 0.5529, <strong>−0.0113</strong></td>
+<td>0.5538 → 0.7348, <strong>+0.1810</strong></td>
+</tr>
+<tr>
+<td>warm (n = 18,043 / 186,041)</td>
+<td>0.6195 → 0.6277, <strong>+0.0083</strong></td>
+<td>0.5457 → 0.7428, <strong>+0.1971</strong></td>
+</tr>
+<tr>
+<td>head-exposure (n = 13,108 / 98,719)</td>
+<td>0.5955 → 0.5828, <strong>−0.0127 [−0.0176, −0.0079]</strong></td>
+<td>0.5565 → 0.7745, <strong>+0.2179</strong></td>
+</tr>
+<tr>
+<td>tail-exposure (n = 5,917 / 87,759)</td>
+<td>0.6319 → 0.6671, <strong>+0.0353</strong></td>
+<td>0.5334 → 0.7076, <strong>+0.1741</strong></td>
+</tr>
+<tr>
+<td>diversity (category, K=10)</td>
+<td>0.8166 → 0.7352</td>
+<td>0.7993 → 0.8029</td>
+</tr>
+<tr>
+<td>novelty (bits)</td>
+<td>17.34 → 17.69</td>
+<td>18.87 → 19.06</td>
+</tr>
+<tr>
+<td>coverage</td>
+<td>0.0283 → 0.0318</td>
+<td>0.0260 → 0.0247</td>
+</tr>
+</tbody>
+</table>
+<p>Three readings we would defend:</p>
+<ol>
+<li><strong>On EB-NeRD the gain is not an artefact of one population</strong> — it holds in every slice,
+   largest on head-exposure (+0.218) and smallest on tail (+0.174). A model leaning on
+   popularity should be expected to do <em>better</em> where articles are widely shown, and it
+   does, which is a consistency check rather than a surprise.</li>
+<li><strong>On MIND the aggregate +0.0048 hides two sign flips, which is exactly what slicing is
+   for.</strong> The model is <em>worse</em> on cold users (−0.0113) and <em>worse</em> on head-exposure
+   impressions (−0.0127 [−0.0176, −0.0079]), and better on warm (+0.0083) and much better
+   on tail-exposure (+0.0353). The mechanism is measurable rather than guessed: on MIND a
+   candidate's own exposure share predicts clicks in the <strong>inverse</strong> direction within its
+   own rack (AUC 0.476 taken positively, 0.524 inverted), so the model learns to
+   down-weight heavily-shown articles. That helps where the clicked article is obscure and
+   hurts where it is the popular one. A cold user additionally has no decayed profile at
+   all, so nothing compensates. Together these argue for a cold-start fallback and for
+   rack-relative rather than absolute popularity features — the improvement we would make
+   next, and the one §4's GBDT property predicts.</li>
+<li><strong>The re-ranker is not free on diversity.</strong> On MIND it trades category diversity
+   (0.817 → 0.735) for novelty and coverage; on EB-NeRD it costs coverage (0.0260 → 0.0247)
+   while raising novelty. Coverage carries no CI (D27): the bootstrap is biased downward for
+   a union statistic, so the raw spread sits in the CSV under its own column names.</li>
+</ol>
+<h2>7. Q9 — anti-gaming: leakage test, and the price of a serving-time feature</h2>
+<p><strong>The test (Q9.2).</strong> Two properties, not a checklist: future deletion and label
+blindness (§2), mutation-verified against four planted leaks. A quarantined future feature
+<em>fails</em> the same check, which is how we know the check can see a leak at all.</p>
+<p><strong>The ablation (Q9.1).</strong> The shipped model is trained twice: on the allowlist, and on the
+allowlist plus everything in <code>features/unavailable.py</code> (<code>read_time</code>,
+<code>scroll_percentage</code>, <code>total_pageviews</code>, <code>future_exposure_share_24h</code>).</p>
+<table>
+<thead>
+<tr>
+<th>MIND (test, 21,947)</th>
+<th>AUC</th>
+<th>MRR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>honest — <strong>this is what ships</strong></td>
+<td>0.6144 [0.6104, 0.6185]</td>
+<td>0.3191</td>
+</tr>
+<tr>
+<td>+ serving-unavailable</td>
+<td>0.5994 [0.5952, 0.6033]</td>
+<td>0.3014</td>
+</tr>
+<tr>
+<td>paired difference</td>
+<td><strong>−0.0150 [−0.0181, −0.0118]</strong></td>
+<td>−0.0177</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>EB-NeRD (test, 186,721)</th>
+<th>AUC</th>
+<th>MRR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>honest — <strong>this is what ships, and what both leaderboard files came from</strong></td>
+<td>0.7428 [0.7415, 0.7441]</td>
+<td>0.5219</td>
+</tr>
+<tr>
+<td>+ serving-unavailable</td>
+<td>0.7590 [0.7578, 0.7602]</td>
+<td>0.5487</td>
+</tr>
+<tr>
+<td>paired difference</td>
+<td><strong>+0.0162 [0.0153, 0.0172]</strong></td>
+<td>+0.0269</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The price of cheating on EB-NeRD is +0.016 AUC: real, but under a tenth of what the
+honest behavioural features bought (+0.197).</strong> The two columns that carry it are
+<code>total_pageviews</code> (17% of the leaky model's gain) and <code>future_exposure_share_24h</code> (16%).</p>
+<p><strong><code>read_time</code> and <code>scroll_percentage</code> — the fields the schema most invites you to misuse —
+are inert here, for a structural reason.</strong> EB-NeRD records them <strong>per impression</strong>, so they
+are constant across a rack, and a ranking objective only compares candidates <em>within</em> a
+rack; neither reaches the leaky model's top five. <strong>The dangerous leak is the one that
+varies per candidate</strong>, which is why <code>total_pageviews</code> — a per-article whole-dataset
+aggregate — is the biggest offender here.</p>
+<p><strong>Cheating made MIND worse, and the reason is mechanical, not moral.</strong> MIND ships no dwell
+or pageview fields, so the only quarantined column with data is the forward exposure
+window — and MIND's log ends 2019-11-15 23:58, so that window is 37–138 h wide in training
+but only 5.7–11.4 h at test time, inflating the feature's mean 3.2× (0.075 → 0.241). The
+leaky model leaned on it (118 trees against 18; 15.7% of its gain) and was then handed a
+differently-distributed input. <strong>So MIND cannot price the leak</strong>; EB-NeRD, where all four
+columns exist and three are not window-dependent, is where that price is measurable.</p>
+<h2>8. Where it breaks at 10×</h2>
+<p>The honest basis for this section is that we <strong>already ran the largest thing we have</strong>:
+205,925,868 candidate rows (EB-NeRD) and 93,115,001 (MIND) were featurised and scored
+locally, in <strong>155 min</strong> and <strong>26 min</strong>, at a 10.6 GB peak on an 11 GB machine. So what
+follows extrapolates from a measured run rather than from an estimate.</p>
+<p><strong>Three things that made the current scale run.</strong> (1) <em>Never materialise the exploded
+candidate list as strings</em>: 206M (impression, article) pairs cost ~10 GB as strings and
+1.4 GB as one sorted <code>int64</code> key per pair. (2) <em>A deep slice of a lazy frame is not free
+once a row index is attached</em>: one 5,000-row chunk at offset 5M cost <strong>297 s</strong>, fixed by
+writing the prepared frame to Parquet first. (3) <em>Partition by user, not by file order</em>:
+per-user work (~3.4 ms) was being repeated in every chunk a user appeared in; hashing users
+into 64 groups pays it once, 2.7 min per 215k-impression group.</p>
+<p><strong>At 10× (135M impressions, ~2 G candidate rows), in the order things break:</strong></p>
+<ul>
+<li><strong>The exposure index, first.</strong> 2 G <code>int64</code> keys is <strong>16 GB</strong> — it stops fitting. It must
+  become either time-bucketed shards or a count keyed by (article, hour) instead of by
+  impression, which is a bounded-size structure: 125k articles × 168 hours is 21M cells,
+  not 2 G.</li>
+<li><strong>Per-user feature building, second.</strong> It is linear and precomputed nowhere: ~8 M users ×
+  3.4 ms ≈ <strong>7.5 h</strong> of profile building alone. A production system would move it to a
+  nightly batch, because a user profile is a function of history, not of the request.</li>
+<li><strong>Wall clock, third.</strong> ~26 h on this machine, which is past any deadline — but the work
+  is embarrassingly parallel by user group, so it is a horizontal-scaling problem rather
+  than an algorithmic one. Nothing in the pipeline requires a global shuffle.</li>
+<li><strong>What does <em>not</em> break:</strong> the model (322 trees, 1.6 MB), the embeddings (190 MB), and
+  BM25 (a fixed sparse matrix). Stage 1 and stage 2 both stay within a single machine's
+  memory at 10×; it is the <em>log-derived</em> features that grow with traffic.</li>
+</ul>
+<p><strong>One caveat about numbers taken under pressure.</strong> Profiling one leaderboard chunk showed
+<code>searchsorted</code> at 0.7 s per call; the same call on a quiet machine takes <strong>10 ms</strong>. The
+difference was memory pressure, not the array. A1's error log already contains a
+conclusion that had to be withdrawn for exactly this reason, which is why the latency
+figures in §5 were taken with nothing else running.</p>
+<h2>9. Reproducing, and what is ours</h2>
+<p><code>README.md</code> carries the one-command rebuild. <code>AI_USAGE.md</code> marks every file as
+AI-generated, AI-generated-then-edited or human-written, and <code>reports/ai_transcripts/</code>
+holds the prompt log (Q7.4). The Codabench worker tooling under <code>codabench/</code> is
+infrastructure, not pipeline: the organisers' scoring program, hidden reference data and
+metrics are used unmodified.</p></body></html>

@@ -620,3 +620,25 @@ both candidates of one rack in the same leaf.
 **Re-check: with a ratio-to-rack-max feature, would trees need different thresholds for
 busy and quiet hours?** Answer: "no, the ratios are normalised between 0 and 1".
 **Correct.** Understood after re-teaching.
+
+
+## 2026-09-19/20: NRMS's two attention layers, and what makes a bootstrap paired
+
+**Taught, in chat (short form, at Chaitanya's pace on deadline night):** NRMS builds a user
+vector from the articles they clicked, in two steps — multi-head *self*-attention, where
+each clicked article is re-read in the light of the others (two transfer-rumour stories
+reinforce each other; a lone recipe does not), then *additive* attention, a learned
+weighted average that can push the recipe's weight to near zero instead of a fixed 1/50.
+The score is the dot product of that vector with the candidate's. Our one deviation (D39):
+the news encoder is a projection of the A1 sentence embedding rather than word-level
+attention over title tokens.
+
+**Paired bootstrap:** both systems scored the *same* impressions, so impression i
+contributes one number, d_i = treatment_i − control_i, and we resample those differences.
+Shared per-impression difficulty cancels, which is why two overlapping unpaired intervals
+can still hide a real, consistent gain. NaN is dropped jointly, or the two systems would
+end up compared on different impression sets.
+
+**Not yet checked with questions** — taught while runs were in flight. Worth a recall quiz
+before the viva: (1) why does pairing cancel difficulty? (2) why must NaN be dropped
+jointly? (3) what does self-attention do that averaging cannot?
