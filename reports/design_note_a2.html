@@ -583,7 +583,41 @@ into 64 groups pays it once, 2.7 min per 215k-impression group.</p>
 difference was memory pressure, not the array. A1's error log already contains a
 conclusion that had to be withdrawn for exactly this reason, which is why the latency
 figures in §5 were taken with nothing else running.</p>
-<h2>9. Reproducing, and what is ours</h2>
+<h2>9. The external check: both leaderboards</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A1's submitted system</th>
+<th>A2 (this system)</th>
+<th>our offline test AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MIND</td>
+<td>0.6191</td>
+<td><strong>0.6181</strong> (rank 69)</td>
+<td>0.6144</td>
+</tr>
+<tr>
+<td>EB-NeRD</td>
+<td>0.5396</td>
+<td><strong>0.7397</strong> (rank 77)</td>
+<td>0.7428</td>
+</tr>
+</tbody>
+</table>
+<p><strong>EB-NeRD gains +0.2001 AUC over A1, and our offline harness predicted that level to within
+0.0031</strong> — on 13.5M unseen impressions, scored by the organisers' own program. That is the
+strongest evidence we have that the offline numbers in this note mean something.</p>
+<p><strong>On MIND the two systems are indistinguishable (−0.0010), although offline we measured
++0.0048.</strong> We take that at face value rather than explaining it away: the MIND gain was
+marginal to begin with, its confidence interval [0.0012, 0.0080] was narrow but small, and
+§6 already showed the aggregate concealing a <strong>−0.0127</strong> loss on head-exposure
+impressions — which is most of the leaderboard. The offline <em>level</em> transferred on both
+datasets (≤0.004); the offline <em>delta</em> transferred only where the signal was large.</p>
+<h2>10. Reproducing, and what is ours</h2>
 <p><code>README.md</code> carries the one-command rebuild. <code>AI_USAGE.md</code> marks every file as
 AI-generated, AI-generated-then-edited or human-written, and <code>reports/ai_transcripts/</code>
 holds the prompt log (Q7.4). The Codabench worker tooling under <code>codabench/</code> is
