@@ -642,3 +642,86 @@ end up compared on different impression sets.
 **Not yet checked with questions** — taught while runs were in flight. Worth a recall quiz
 before the viva: (1) why does pairing cancel difficulty? (2) why must NaN be dropped
 jointly? (3) what does self-attention do that averaging cannot?
+
+
+## 2026-09-20 (extension week): taught in writing, to be checked when he is back
+
+Chaitanya is sitting examinations and asked for the work to go on without him. These
+concepts were therefore *written down* rather than taught in conversation, so R1's step 3
+(the comprehension check) is **owed, not skipped** — the questions are below, unanswered,
+and each one must be put to him before the report is written, because he has to explain
+these in his own words for it to be his report.
+
+**Worth telling him first:** he already half-derived D42 himself. In the 2026-09-19 recall
+check he was asked whether a ratio-to-rack-max feature would need different thresholds for
+busy and quiet hours, and answered *"no, the ratios are normalised between 0 and 1"* —
+correct, and it is exactly the argument D42 acts on. This is his idea being built, not a
+new one being handed to him.
+
+### Concept 1 — the rack, and why absolute numbers mislead a tree
+
+**Analogy.** A newsagent has a rack of twelve papers by the door. You want to know which
+one a customer will pick up. You could record "this paper sold 400 copies last hour" — but
+400 means something quite different at 8 a.m. with a queue out the door than at 3 p.m. with
+nobody in the shop. What actually predicts the pick-up is "it outsold the eleven papers
+beside it on the same rack, this morning". The first number mixes two things: how popular
+the paper is, and how busy the shop was. The second cancels the shop.
+
+**Technical.** A gradient-boosted tree can only ask questions of the form *is this feature
+greater than t?*, with one t shared by every impression. If a feature's **level** moves
+between impressions, one threshold cannot serve them all. We measured how bad this is with
+the *between-rack variance share*: the variance of the per-impression means, weighted by
+rack size, over the feature's total variance. On MIND, `bm25` scores **0.738** — nearly
+three-quarters of its variation is "which rack is this", not "which candidate is this". The
+fix is to give the tree the within-rack position as well: `f_pct` (percentile rank, 0 to 1)
+and `f_z` ((f − rack mean) ÷ rack standard deviation).
+
+**Comprehension checks (owed):**
+1. `freshness_hours` scored 0.039 between-rack on MIND and `bm25` scored 0.738. Which of
+   the two gains more from being rack-normalised, and why does that follow from those
+   numbers?
+2. The base MIND model stopped at 18 trees; adding the rack columns pushed it to 209.
+   What does that tell you about what the 18-tree model was doing?
+3. Why are `session_position` and `device_type` deliberately left un-normalised?
+4. Why is this *not* a leak, given that a rack feature reads other candidates?
+
+### Concept 2 — what a word-level news encoder does that a sentence vector cannot
+
+**Analogy.** Someone hands you a one-line summary of an article and asks what it is about.
+You can rephrase the summary, shorten it, emphasise part of it — but you cannot go back and
+re-read the headline to check whether "Apple" meant the company or the fruit. Whoever wrote
+the summary already made that call. Reading the headline yourself, word by word, with each
+word's meaning settled by its neighbours, is a different act.
+
+**Technical.** NRMS's news encoder runs multi-head self-attention *across the title's
+words* (each word attends to the others), then pools them with additive attention. D39
+replaced that with a learned linear projection of a pre-pooled 384-dim sentence embedding:
+a function of the summary, which can rescale it but cannot revisit the pooling. D43 restores
+the paper's version — GloVe 300d vectors, 34,297 vocabulary items from MIND's titles, 92.9%
+covered by GloVe, titles kept to 20 tokens (p99 is 21, so 98.9% survive whole).
+
+**Comprehension checks (owed):**
+1. Why can a linear projection of a sentence embedding not recover what word-level
+   self-attention computes?
+2. A word GloVe has never seen gets a small random vector instead of being dropped or
+   merged into one `<unk>`. Give a concrete headline where dropping it would be bad.
+
+### Concept 3 — batch throughput and serving latency are different problems
+
+**Analogy.** A caterer who can feed 500 people at a wedding is not the person you want
+making you a single sandwich. The setup that makes the big job efficient — industrial pans,
+bulk prep, one enormous oven run — is pure overhead for one order, and the sandwich takes
+twenty minutes.
+
+**Technical.** `build_rows` is correct and fast for 206 million candidate rows. Serving one
+request of 100 candidates, it performs **66 separate Polars query collections**, and the
+dataframe machinery — not the dot products, not the trees — is 52% of the latency. The fix
+is a different shape, not a faster one: split state by *lifetime* (corpus / per-user /
+per-request) and do the last tier in plain NumPy.
+
+**Comprehension checks (owed):**
+1. The per-user work was measured at 13.5% of the feature stage. Moving it to a nightly job
+   is the single biggest structural win — so what does the system lose by doing that, on a
+   dataset where 92.7% of clicks are on fresh articles?
+2. Why does the new path need a test asserting it equals the old one, rather than just its
+   own tests?
