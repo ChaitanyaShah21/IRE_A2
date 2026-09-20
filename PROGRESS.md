@@ -1,10 +1,43 @@
 # Progress — Assignment 2
 
-**Read this first in every session (R11).** Last updated: 2026-09-19
+**Read this first in every session (R11).** Last updated: 2026-09-20 (extension week)
 
 ---
 
-## Where we are right now
+## Where we are right now — extension week, branch `a2-improvements`
+
+**`main` is untouched and remains submittable** (tag `a2-submission-ready`). All work below
+is on `a2-improvements`. Chaitanya is sitting examinations and asked for the work to proceed
+without him, with decisions reviewed together afterwards; every decision is therefore logged
+in `ARCHITECTURE.md` D42–D44b with the alternatives it rejected.
+
+**Done and measured (2026-09-20):**
+
+| | result |
+|---|---|
+| **D42** rack-relative features | paired AUC **+0.0223** [0.0195, 0.0250] MIND, **+0.0202** [0.0194, 0.0210] EB-NeRD; every CI on every metric on both datasets excludes zero |
+| **D42b** slices | MIND's two regressions vs A1 (head-exposure −0.0127, cold −0.0113) become **+0.0162** and **+0.0185**, and are the largest gains — the fix repairs what it predicted it would |
+| **D44** serving path | feature stage p99 **2,742–22,398 ms → 6.7–8.3 ms**, robust across three runs and both memory states |
+| **D44b** correction | the "p99 < 100 ms SLA now met" claim is **withdrawn as stated** — it holds warm, fails cold, and the failure is in stage 1, which D44 never touched |
+| **D43** word-level NRMS | built, tested (it learns a token-only planted signal), running |
+| Tests | 326 → **354**, green |
+
+**In flight:** the word-level NRMS run (2 arms, MIND, ~16.6 h, started 2026-09-20 ~22:10).
+Log at `data/logs/nrms_word.log`; per-epoch checkpoints in `data/processed/checkpoints/`.
+**It resumes** — rerun the same command and it continues from the last completed epoch.
+
+**Needs Chaitanya, nothing else does:** whether to re-score and resubmit to Codabench. The
+offline gains are large (+0.0223 / +0.0202) and the harness has previously transferred
+MIND's *delta* (predicted +0.0151, delivered +0.0154) and EB-NeRD's *level* (0.0031 apart),
+so ~0.640 and ~0.760 are plausible. Costs ~4–5 h of scoring plus his account to submit, and
+CLAUDE.md §4 is explicit that grading is never on leaderboard rank.
+
+**The report is still the only thing that changes the grade.** See the authorship condition
+below; the teaching owed before he writes is listed in `LEARNING.md` under 2026-09-20.
+
+---
+
+### Superseded status (kept for context)
 
 **All phases A0–A6 are complete** (tags `a2-phase-0/1/2/3/4-complete`, `a2-submission-ready`). 326 tests pass.
 - **A1:** the store holds a 5% user sample of `ebnerd_large` (D33): 1,219,746 EB-NeRD
@@ -72,7 +105,7 @@ a clone of it with full history and all six A1 tags, so every A1 module, decisio
 error-log entry is available here. **240 A1 tests pass in this location** — verified after
 the move, not assumed.
 
-**Deadline: 20 September 2026.**
+**Deadline: 26 September 2026** (extended; the 20 September submission was made and stands).
 
 ---
 
