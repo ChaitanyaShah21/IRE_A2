@@ -27,8 +27,9 @@ h2, h3 { page-break-after: avoid; }
 </style></head><body><h1>Learning from Click-Logs: a Two-Stage Retrieve-then-Rank System for MIND and EB-NeRD</h1>
 <p><strong>CS4.406 Information Retrieval &amp; Extraction — Assignment 2</strong> · Chaitanya Shah
 Done <strong>solo</strong>, which the specification permits for this team assignment.
-Code: <code>src/newsrec/</code> · decision log: <code>ARCHITECTURE.md</code> (A1's D1–D32, A2's D33–D40) ·
-every quoted figure traces to <code>reports/NUMBERS.md</code>.</p>
+<strong>Code: https://github.com/ChaitanyaShah21/IRE_A2</strong> · decision log: <code>ARCHITECTURE.md</code>
+(A1's D1–D32, A2's D33–D41) · every quoted figure traces to <code>reports/NUMBERS.md</code> ·
+326 tests, including the Q9 leakage suite.</p>
 <hr />
 <h2>1. What was built, and the one idea behind it</h2>
 <p>A1 ended on a measured gap: <strong>BM25 and embedding retrieval contain no time term</strong> — a
@@ -204,7 +205,10 @@ clicked articles, then additive attention to pool them, scored by dot product ag
 candidate, trained with one click against four same-impression negatives. <strong>One documented
 deviation:</strong> the news encoder is a learned projection of our existing 384-dim multilingual
 sentence embeddings instead of word-level attention over title tokens. That is what makes
-it trainable on a GPU-less laptop; the user encoder, objective and scoring are the paper's.</p>
+it trainable on a GPU-less laptop; the user encoder, objective and scoring are the paper's.
+Both that substitution and D41's training budget push our absolute NRMS numbers below what
+a fully-trained, word-level NRMS reaches on a GPU — so this section is a <em>controlled
+ablation around a reproduced architecture</em>, not a claim about NRMS's ceiling.</p>
 <p><strong>The one principled change (D40): a time term.</strong> NRMS has no time input at all. A small
 MLP over (log freshness, exposure share 1 h, exposure share 24 h) is added to the click
 score, zero-initialised so training <em>starts</em> at exactly the baseline. The change was
