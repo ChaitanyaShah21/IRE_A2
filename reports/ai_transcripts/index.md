@@ -18,6 +18,10 @@ credentials and pre-signed URL signatures are masked.
 | 9 | [09_2026-08-25_96d4183e.md](09_2026-08-25_96d4183e.md) | 2026-08-25 10:46 | 13 | run_bm25_recall.py |
 | 10 | [10_2026-08-25_14d559b0.md](10_2026-08-25_14d559b0.md) | 2026-08-25 15:45 | 12 | build_embeddings.py |
 | 11 | [11_2026-08-25_ca804be2.md](11_2026-08-25_ca804be2.md) | 2026-08-25 21:33 | 16 | A1 |
-| 12 | [12_2026-08-26_83c9a94a.md](12_2026-08-26_83c9a94a.md) | 2026-08-26 18:17 | 46 | EB-NeRD Codabench worker evaluation |
+| 12 | [12_2026-08-26_83c9a94a.md](12_2026-08-26_83c9a94a.md) | 2026-08-26 18:17 | 55 | EB-NeRD Codabench worker evaluation |
+| 13 | [13_2026-08-30_af24aab0.md](13_2026-08-30_af24aab0.md) | 2026-08-30 19:29 | 10 | Quiz preparation CAP and operational laws |
+| 14 | [14_2026-09-15_c7f4e585.md](14_2026-09-15_c7f4e585.md) | 2026-09-15 15:08 | 1 | A2 assignment plan |
+| 15 | [15_2026-09-15_0ff486c7.md](15_2026-09-15_0ff486c7.md) | 2026-09-15 19:43 | 19 | New session |
+| 16 | [16_2026-09-19_a09e25b8.md](16_2026-09-19_a09e25b8.md) | 2026-09-19 16:19 | 87 | Continue assignment |
 
-**12 sessions, 158 prompts.**
+**16 sessions, 284 prompts.**

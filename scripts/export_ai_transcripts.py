@@ -164,9 +164,12 @@ def fmt(ts: str) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--source", type=Path,
-                    default=Path.home() / ".claude" / "projects" / "-home-csharp-IRE-A1",
-                    help="directory of session .jsonl files")
+    # A2 lives in its own project directory, so both must be exported or the
+    # prompt log silently covers A1 only - which is what happened first.
+    ap.add_argument("--source", type=Path, nargs="+",
+                    default=[Path.home() / ".claude" / "projects" / "-home-csharp-IRE-A1",
+                             Path.home() / ".claude" / "projects" / "-home-csharp-IRE-A2"],
+                    help="one or more directories of session .jsonl files")
     ap.add_argument("--full", action="store_true",
                     help="also include the assistant's prose replies")
     ap.add_argument("--max-prompt-lines", type=int, default=25,
@@ -175,9 +178,13 @@ def main() -> int:
                     help="character cap applied alongside --max-prompt-lines")
     args = ap.parse_args()
 
-    if not args.source.is_dir():
-        sys.exit(f"FATAL: {args.source} not found")
-    files = sorted(args.source.glob("*.jsonl"))
+    files = []
+    for src in args.source:
+        if not src.is_dir():
+            sys.exit(f"FATAL: {src} not found")
+        found = sorted(src.glob("*.jsonl"))
+        print(f"source    : {src}  ({len(found)} sessions)")
+        files += found
     if not files:
         sys.exit(f"FATAL: no .jsonl sessions in {args.source}")
 

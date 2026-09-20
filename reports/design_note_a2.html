@@ -189,44 +189,15 @@ inferred from first appearance in a sampled log and its recency can only use lis
 position. The time signal helps where the data records time, which is also why the two
 datasets' decay features are not comparable to each other.</p>
 <h3>3.2 Retrieved top-K (K = 100) — our own candidate generation</h3>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>MIND</th>
-<th>EB-NeRD</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>recall@100, in-circulation pool</td>
-<td>2.6%</td>
-<td>2.5%</td>
-</tr>
-<tr>
-<td>impressions with ≥1 click retrieved</td>
-<td>798 of 21,289</td>
-<td>4,704 of 186,721</td>
-</tr>
-<tr>
-<td>MRR, retrieval order → re-ranked</td>
-<td>0.070 → <strong>0.260</strong></td>
-<td>0.052 → <strong>0.567</strong></td>
-</tr>
-<tr>
-<td>AUC, retrieval order → re-ranked</td>
-<td>0.567 → 0.786</td>
-<td>0.508 → 0.968</td>
-</tr>
-</tbody>
-</table>
-<p>Two honest readings. First, <strong>recall@K is the ceiling</strong>: re-ranking cannot rescue the
-97.5% of impressions whose clicked article never entered the top 100, which is why both
-leaderboards score a supplied list instead. Second, <strong>EB-NeRD's 0.968 is not a better
-system than §3.1's 0.743</strong>: the 99 negatives here were drawn from a 125,541-article corpus
-by text similarity, so most were not in circulation that day, and freshness separates them
-almost trivially. Easy negatives inflate AUC. The supplied-list number is the one to
-believe.</p>
+<p>A1's semantic generator retrieves 100 from the whole corpus; the same model re-ranks them
+(full numbers in <code>reports/retrieved_regime_*_test_k100.csv</code>). <strong>Recall@100 is 2.6% / 2.5%</strong>,
+so ranking metrics are defined on 798 / 4,704 impressions only — re-ranking cannot rescue
+an impression whose clicked article never entered the 100, which is why both leaderboards
+score a supplied list instead. Within those, MRR moves 0.070 → <strong>0.260</strong> (MIND) and
+0.052 → <strong>0.567</strong> (EB-NeRD). EB-NeRD's AUC there (0.508 → 0.968) is <strong>not</strong> a better system
+than §3.1's 0.743: the 99 negatives were pulled from a 125,541-article corpus by text
+similarity, so most were never in circulation that day and freshness separates them
+trivially. Easy negatives inflate AUC; the supplied-list number is the one to believe.</p>
 <h2>4. Q3 — baseline reproduced, then beaten</h2>
 <p><strong>Baseline (D39): NRMS</strong> (Wu et al., 2019) — multi-head self-attention over the user's
 clicked articles, then additive attention to pool them, scored by dot product against the
@@ -309,61 +280,36 @@ a conclusion that had to be withdrawn after being taken on a contended machine.<
 <table>
 <thead>
 <tr>
-<th></th>
+<th>p50 / p99 per stage</th>
 <th>MIND</th>
 <th>EB-NeRD</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>resident footprint, total</td>
-<td><strong>283 MB</strong></td>
-<td><strong>475 MB</strong></td>
+<td>retrieve top-100</td>
+<td>9.0 / 23.7 ms</td>
+<td>9.6 / 22.2 ms</td>
 </tr>
 <tr>
-<td>— largest items</td>
-<td>embeddings 100 MB · user vectors 77 MB · exposure index 71 MB · BM25 19 MB</td>
-<td>embeddings 193 MB · exposure index 123 MB · user vectors 61 MB · session table 44 MB</td>
+<td><strong>build features</strong></td>
+<td><strong>223.0 / 348.0 ms</strong></td>
+<td><strong>439.0 / 2,352 ms</strong></td>
 </tr>
 <tr>
-<td>start-up (context build)</td>
-<td>5.2 s</td>
-<td>137 s at leaderboard scale</td>
-</tr>
-<tr>
-<td>stage 1, retrieve top-100</td>
-<td>p50 <strong>9.0 ms</strong>, p99 23.7 ms</td>
-<td>p50 <strong>9.6 ms</strong>, p99 22.2 ms</td>
-</tr>
-<tr>
-<td>stage 2, build features</td>
-<td>p50 <strong>223.0 ms</strong>, p99 348.0 ms</td>
-<td>p50 <strong>439.0 ms</strong>, p99 2,352 ms</td>
-</tr>
-<tr>
-<td>stage 3, score 100 candidates</td>
-<td>p50 <strong>3.2 ms</strong>, p99 9.0 ms</td>
-<td>p50 <strong>4.3 ms</strong>, p99 6.9 ms</td>
+<td>score 100 candidates</td>
+<td>3.2 / 9.0 ms</td>
+<td>4.3 / 6.9 ms</td>
 </tr>
 <tr>
 <td><strong>total</strong></td>
-<td>p50 237 ms, <strong>p99 360 ms</strong></td>
-<td>p50 452 ms, <strong>p99 2,369 ms</strong></td>
+<td>237 / <strong>360 ms</strong></td>
+<td>452 / <strong>2,369 ms</strong></td>
 </tr>
 <tr>
-<td>throughput per core</td>
-<td>4.2 q/s</td>
-<td>1.5 q/s</td>
-</tr>
-<tr>
-<td><strong>cost per 1,000 queries</strong> (at $0.04 / vCPU-hour)</td>
-<td><strong>$0.0027</strong></td>
-<td><strong>$0.0077</strong></td>
-</tr>
-<tr>
-<td>cores for 1,000 QPS</td>
-<td>239</td>
-<td>689</td>
+<td>footprint · throughput · cost/1,000 q · cores for 1,000 QPS</td>
+<td>283 MB · 4.2 q/s · <strong>$0.0027</strong> · 239</td>
+<td>475 MB · 1.5 q/s · <strong>$0.0077</strong> · 689</td>
 </tr>
 <tr>
 <td><strong>p99 &lt; 100 ms SLA</strong></td>
@@ -372,6 +318,9 @@ a conclusion that had to be withdrawn after being taken on a contended machine.<
 </tr>
 </tbody>
 </table>
+<p>Footprint detail: embeddings 100/193 MB, exposure index 71/123 MB, user vectors 77/61 MB,
+BM25 19/22 MB, EB-NeRD's session table 44 MB. Start-up (context build) 5.2 s, or 137 s at
+leaderboard scale.</p>
 <p><strong>Little's law check.</strong> With one request in flight X ≤ 1/R: MIND's R = 0.237 s gives
 X ≤ 4.2 q/s, exactly the measured per-core throughput — so the only way past it is to cut R
 or add concurrency.</p>
@@ -485,52 +434,26 @@ allowlist plus everything in <code>features/unavailable.py</code> (<code>read_ti
 <table>
 <thead>
 <tr>
-<th>MIND (test, 21,947)</th>
 <th>AUC</th>
-<th>MRR</th>
+<th>MIND (21,947)</th>
+<th>EB-NeRD (186,721)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>honest — <strong>this is what ships</strong></td>
+<td>honest — <strong>what ships, and what both leaderboard files came from</strong></td>
 <td>0.6144 [0.6104, 0.6185]</td>
-<td>0.3191</td>
+<td>0.7428 [0.7415, 0.7441]</td>
 </tr>
 <tr>
 <td>+ serving-unavailable</td>
 <td>0.5994 [0.5952, 0.6033]</td>
-<td>0.3014</td>
+<td>0.7590 [0.7578, 0.7602]</td>
 </tr>
 <tr>
 <td>paired difference</td>
 <td><strong>−0.0150 [−0.0181, −0.0118]</strong></td>
-<td>−0.0177</td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr>
-<th>EB-NeRD (test, 186,721)</th>
-<th>AUC</th>
-<th>MRR</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>honest — <strong>this is what ships, and what both leaderboard files came from</strong></td>
-<td>0.7428 [0.7415, 0.7441]</td>
-<td>0.5219</td>
-</tr>
-<tr>
-<td>+ serving-unavailable</td>
-<td>0.7590 [0.7578, 0.7602]</td>
-<td>0.5487</td>
-</tr>
-<tr>
-<td>paired difference</td>
 <td><strong>+0.0162 [0.0153, 0.0172]</strong></td>
-<td>+0.0269</td>
 </tr>
 </tbody>
 </table>
