@@ -15,38 +15,49 @@
 - `reports/NUMBERS.md` is the numbers ledger: every figure we would quote, with its
   source.
 
-**OVERNIGHT 2026-09-19/20 — where everything stands.** Commits `85a8f43` … `5f35d89`.
+**DEADLINE EXTENDED to Saturday 26 September 2026** (TA mail, 2026-09-20 17:54). The
+20 September submission was made and stands; anything further is improvement, not rescue.
 
-**Done and committed:**
-- **Q2 (A3):** LambdaRank re-ranker, both candidate regimes, paired CIs. D36/D37/D38
-  confirmed by Chaitanya after being explained option by option.
-- **Q5:** `run_extended_eval.py` — seven metrics × five slices × CIs, both datasets.
-- **Q9:** `run_q9_ablation.py` — EB-NeRD prices the leak at **+0.0162 AUC**
-  [0.0153, 0.0172]; MIND's arm is unmeasurable (truncated forward window) and says so.
-- **Q4:** `benchmark_serving.py` — footprint 283/475 MB, p99 **360 ms (MIND) / 2,369 ms
-  (EB-NeRD)**, both failing the 100 ms SLA, with the decomposition that explains why.
-- **Leaderboards:** both files built and validated. `reports/submissions/{mind,ebnerd}_lgbm.zip`.
-- **Design note:** `reports/design_note_a2.md`, §1–§3 and §5–§9 written from measured
-  numbers. Render with `scripts/build_design_note_pdf.py` (11pt, 1in, 6-page target).
-- **Docs:** `SCALE_NOTES.md` has the leaderboard-scale run and what breaks at 10×;
-  `NUMBERS.md` §I.2/I.3 carry every figure; `AI_USAGE.md` and `README.md` updated.
+**THE CONDITION THAT MATTERS MORE THAN THE DATE.** The same mail says: *"Please make sure
+you write proper reports, since many of you guys submitted a fully AI generated report. The
+Report must reflect your findings/learnings and should be written by you."*
 
-- **Q3 (A4), finished 05:05:** NRMS reproduced and beaten. EB-NeRD **+0.0864 AUC
-  [0.0852, 0.0877]** from the pre-registered time term; MIND's equivalent is null on AUC
-  (+0.0053 MRR). Tags `a2-phase-3-complete`, `a2-phase-4-complete`.
-- **Design note complete**, 7 pages, no gaps: `reports/design_note_a2.{md,pdf}`.
-- **326 tests pass** (re-run 00:16 after the night's changes).
+`reports/design_note_a2.{md,pdf}` is **AI-written** (marked as such in `AI_USAGE.md`). It
+is accurate and every figure traces to `NUMBERS.md`, but it does not satisfy that
+instruction. **The design note must be rewritten by Chaitanya in his own words before the
+26th.** The correct division of labour for that rewrite, and the one to hold to in the next
+session:
 
-**Morning checklist for Chaitanya:**
-1. Codabench: confirm both submissions are **Finished with a score**, and screenshot both
-   leaderboards (Q5/Q7). The EB-NeRD worker needs `codabench/Dockerfile.worker-upstream`,
-   not the released image — see the error log.
-2. **Decide the page count.** The note is 7 pages against Q6's 6-page *target* (a
-   guideline; it allows more when content justifies it). To reach 6, cut one table —
-   the retrieved-regime table in §3.2 is the most expendable, since its numbers live in
-   `reports/retrieved_regime_*.csv`. Rendering: `scripts/build_design_note_pdf.py`.
-3. Read §4 and §7 — those carry the two claims a viva would probe hardest.
-4. GitHub Classroom repo still not located; A2 has no remote.
+| Chaitanya | Claude |
+|---|---|
+| Writes every sentence of the report | Supplies numbers and their provenance from `NUMBERS.md` |
+| Decides what the findings mean and which to lead with | Checks claims against the measurements and flags anything unsupported |
+| Explains the mechanisms in his own words | Teaches the mechanism until he can, and quizzes him |
+| Owns structure and emphasis | Points out gaps against the Q6 rubric |
+
+The AI-written note stays in the repository as `reports/design_note_a2_ai_draft.pdf` for
+the audit trail (Q7.4 honesty), and `AI_USAGE.md` records both it and the human-written
+final report.
+
+**State of the work (all complete, all measured):** Q1–Q9 done; both leaderboards scored
+(EB-NeRD 0.7397, MIND 0.6181); 326 tests; tags `a2-phase-0..4-complete`,
+`a2-submission-ready`. The 6-epoch NRMS robustness re-run is also done and changed no
+conclusion.
+
+**Candidate work for the extra week, ranked by value per hour:**
+1. **The human-written report.** Non-negotiable, and the only item that affects the grade
+   under the new instruction. Budget several sessions, not one.
+2. **MIND's rack-relative popularity features** (§10 of the note). The measured diagnosis
+   already exists: absolute exposure is learned inversely and costs −0.0127 AUC on
+   head-exposure impressions. Normalising within the impression is a small change to
+   `features/article.py`, a rebuild of the feature tables, and a retrain — perhaps 3 h, and
+   it is the one change likely to move the MIND leaderboard number.
+3. **Word-level NRMS** for a faithful Q3.1 reproduction: tokeniser, vocabulary, GloVe, and
+   several hours of CPU per arm. Now feasible within a week; was not within a night.
+4. **Serving-path optimisation** (§5's projection, currently unbuilt).
+
+**New-session note:** Chaitanya wants a fresh chat for any new work, to avoid context
+compression. This file plus `ARCHITECTURE.md` are the handoff; R11 applies.
 
 **Feature table entry point:** `features/assemble.build_feature_table(dataset, target,
 all_impressions, history, articles, emb_ids, emb)`. Fixed cost ~35 s (MIND) / ~75 s
