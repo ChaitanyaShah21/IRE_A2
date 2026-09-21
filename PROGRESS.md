@@ -70,7 +70,11 @@ session:
 
 The AI-written note stays in the repository as `reports/design_note_a2_ai_draft.pdf` for
 the audit trail (Q7.4 honesty), and `AI_USAGE.md` records both it and the human-written
-final report.
+final report. **Done 2026-09-21** on `a2-improvements`: `design_note_a2.{md,pdf}` are
+renamed to `..._ai_draft.{md,pdf}`, so nothing sits at the expected path pretending to be
+his. `main` keeps the original names, which is the state actually submitted on 20 September.
+The material he writes from is `reports/report_prep.md` — requirements, figures with
+provenance, and questions, containing no prose to paste.
 
 **State of the work (all complete, all measured):** Q1–Q9 done; both leaderboards scored
 (EB-NeRD 0.7397, MIND 0.6181); 326 tests; tags `a2-phase-0..4-complete`,
