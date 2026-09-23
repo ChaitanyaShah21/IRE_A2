@@ -780,3 +780,61 @@ did.
 2. Why was it left unfixed for the word-level run rather than corrected immediately?
    (Same reason Kaggle was rejected — name the confound.)
 3. What kind of bug can a test suite never catch, and what is the only thing that does?
+
+
+## 2026-09-23: the two findings from the word-level run, checks still owed
+
+### Concept 6 — a validation set that picks the epoch is not a preview of the test set
+
+**Analogy.** You revise from last year's paper and get 90%. That tells you how well you know
+*last year's paper*, and you chose which topics to revise by looking at it. This year's paper
+is a different paper, set later.
+
+**Technical.** Each NRMS arm picks its epoch by validation AUC, then reports on test. So the
+validation number is doubly optimistic — it is the maximum over three epochs, of a quantity
+measured on the split that chose the maximum. On MIND it mispredicted the **direction** of
+both comparisons made this week:
+
+| | validation said | test said |
+|---|---|---|
+| word-level vs sentence-level encoder | word-level **+0.0198** better | **−0.0017**, intervals overlap |
+| time term on MIND (word-level) | **−0.0076**, hurting | **+0.0032** [0.0018, 0.0045], helping |
+
+The word-level model has **11.0M parameters against 413k**. It has far more capacity to fit
+the validation window, and the test split is a *later time period* (D7 is a temporal split),
+so what it fitted does not carry. Both its arms peak at epoch 1; the small model was still
+improving at epoch 3.
+
+**Comprehension checks (owed):**
+1. Why is a bigger model *more* likely to show this gap than a small one?
+2. D7 carved the test split so that nothing would select on it. Name the concrete claim that
+   decision prevented this week.
+3. Could we fix this by picking the epoch on test instead? What would that break?
+
+### Concept 7 — a relative feature can acquire a false meaning, not just lose its real one
+
+**Analogy.** "Tallest in the room" is useful in a room of adults. Put one adult in a room of
+children and it still returns an answer — a very confident one — but it is now telling you
+about the room, not about the person.
+
+**Technical.** Rack features are percentiles within the supplied candidate list. Score the
+model over A1's retrieved top-100 instead of the platform's inview list and AUC leaps from
+0.6367 to **0.9222**. Measured cause:
+
+| MIND, mean `exposure_share_1h` | clicked | unclicked | ratio |
+|---|---|---|---|
+| inview lists (training distribution) | 0.428 | 0.321 | **1.33x** |
+| retrieved top-100 | 0.355 | **0.00316** | **112x** |
+
+A retrieved rack holds one article the platform was actively promoting — that is *how* it was
+clicked — plus 99 semantic neighbours mostly not being shown. The clicked item's exposure
+percentile is **0.983**: top of rack, essentially always. The prediction written in D42c was
+that rack features would *degrade* here. They inflate instead.
+
+**Comprehension checks (owed):**
+1. What had to be true about an article for it to appear as the *clicked* item in a retrieved
+   rack? Why does that alone make exposure nearly decisive?
+2. Why does the base model also inflate (0.7858), and why does rack normalisation inflate it
+   further rather than being neutral?
+3. Generalise: what is the risk for *any* system trained on one candidate generator and
+   served by a different one?

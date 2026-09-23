@@ -58,9 +58,25 @@ real time (Landmine 3).
 
 **This is the section with the most content and the strongest story. Two separate results.**
 
-**(a) Q3's pre-registered change — the time term in NRMS.** MIND +both −0.0002 [−0.0011,
-0.0008] (spans zero); EB-NeRD +both +0.0864 [0.0852, 0.0877]. +freshness alone is
-+0.0013 MIND / +0.1141 EB-NeRD. 6-epoch MIND re-run changed no conclusion.
+**(a) Q3's pre-registered change — the time term in NRMS.** EB-NeRD +both **+0.0864**
+[0.0852, 0.0877]; +freshness alone +0.1141. On MIND the answer *depends on the news
+encoder*, which is the interesting part:
+
+| MIND, `+fresh+exposure − nrms` | paired ΔAUC | excludes zero? |
+|---|---|---|
+| sentence-level, 3 epochs (D41) | −0.0002 [−0.0011, 0.0008] | no |
+| sentence-level, 6 epochs | −0.0001 [−0.0011, 0.0009] | no |
+| **word-level (D43, the paper's encoder)** | **+0.0032 [0.0018, 0.0045]** | **yes** |
+
+**(a2) What the word-level run settled about D39's deviation.** The design note conceded the
+substituted news encoder was the one thing a grader could call a variant rather than a
+reproduction. On the test split it **cost nothing**: word-level baseline 0.6129 [0.6091,
+0.6167] vs sentence-level 0.6146 [0.6109, 0.6184] at 3 epochs, 0.6180 at 6.
+
+But on *validation* word-level led by **+0.0198** (0.6305 vs 0.6107) — and that was believed
+mid-run before the test split contradicted it. 11.0M parameters against 413k: it fits the
+validation window and does not transfer. **Both word-level arms peak at epoch 1 and decline**,
+while sentence-level was still rising at epoch 3.
 
 **(b) D42's rack normalisation — measured this week.** Paired vs the shipped model, test
 split, 1,000 resamples:
@@ -85,6 +101,17 @@ Validation ablation (how the arm was chosen): base / +pct / +z / +both — NUMBE
    these are the **largest** gains. Why does that matter more than the headline +0.0223?
 5. Why was the arm chosen on **validation** and not on test? What would choosing on test
    have repeated? (A1's Finding 5.)
+
+**Extra questions, from the word-level run:**
+6. Why does a model that is clearly better on validation lose on test? What does that say
+   about using the same split to select the epoch and to report the result?
+7. The time term is worth +0.0864 on EB-NeRD and +0.0032 on MIND. Why might a *principled*
+   change help enormously on one dataset and barely on another? (A1's finding: 92.7% / 93.5%
+   of clicks on fresh articles — so why isn't MIND's gain similar?)
+
+**Do not claim:** that the word-level encoder is better. It is not, on test. Say that the
+substitution cost no accuracy but *did* distort the MIND time-term result — that is the
+finding, and it is stronger than either simpler story.
 
 **Do not claim:** that rack normalisation is a new idea discovered this week. It is D40's
 option B, rejected in September because Q3 needed a change to the *official baseline*, and
@@ -123,6 +150,32 @@ states) and that the remaining risk is cold-start page faults.
 
 ---
 
+## Section 3b — A measurement that must NOT be reported as a result (D42d)
+
+Scoring the rack model over A1's retrieved top-100 instead of the supplied inview list gives
+**AUC 0.9222** and a +0.1364 gain from rack features — against 0.6367 for the same model on
+inview lists. It is an artefact, and the cause is measured:
+
+| MIND, mean `exposure_share_1h` | clicked | unclicked | ratio |
+|---|---|---|---|
+| inview lists (training distribution) | 0.428 | 0.321 | **1.33x** |
+| retrieved top-100 | 0.355 | **0.00316** | **112x** |
+
+Clicked `exposure_share_1h_pct` in the retrieved regime: **0.983**.
+
+**Questions:**
+1. Why is the clicked article in a *retrieved* rack almost always the most-exposed one? (What
+   had to be true for it to be clicked at all?)
+2. Why does rack normalisation *amplify* the artefact rather than being neutral to it?
+3. Only 798 of 21,947 impressions have a defined metric here (recall@100 = 2.62%). Why does
+   that make over-reading these numbers worse still?
+
+**Use this as evidence for why the supplied candidate list is the honest evaluation surface.**
+Quoting 0.9222 as a capability would be the most flattering and least honest number in the
+project.
+
+---
+
 ## Section 4 — Where it breaks at 10x
 
 **Numbers in `SCALE_NOTES.md`:** exposure key array 2 G int64 = 16 GB at 10x (first wall);
@@ -156,6 +209,11 @@ re-run changed the conclusion:
 - A 665x serving speedup that was partly a contended machine (run 1 vs run 2).
 - A 14–22 s batch tail that was mostly memory state (run 3 on a fresh VM: 2.7 s).
 - An SLA claim that held warm and failed cold — **stated to you, then withdrawn**.
+- A word-level encoder that led by +0.0198 on validation and lost on test — **stated to you,
+  then withdrawn**.
+- A retrieved-regime AUC of 0.9222 that turned out to measure a 112x exposure artefact.
+- A prediction (D42c) that rack features would degrade when their reference set changed; they
+  inflated instead, and the corrected explanation is more general than the original.
 
 The generalisation, from this project's own error log: *on this machine a latency measured
 once is not a measurement*. You have three concrete instances. That paragraph is the kind

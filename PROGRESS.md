@@ -1,6 +1,6 @@
 # Progress — Assignment 2
 
-**Read this first in every session (R11).** Last updated: 2026-09-20 (extension week)
+**Read this first in every session (R11).** Last updated: 2026-09-23
 
 ---
 
@@ -19,12 +19,16 @@ in `ARCHITECTURE.md` D42–D44b with the alternatives it rejected.
 | **D42b** slices | MIND's two regressions vs A1 (head-exposure −0.0127, cold −0.0113) become **+0.0162** and **+0.0185**, and are the largest gains — the fix repairs what it predicted it would |
 | **D44** serving path | feature stage p99 **2,742–22,398 ms → 6.7–8.3 ms**, robust across three runs and both memory states |
 | **D44b** correction | the "p99 < 100 ms SLA now met" claim is **withdrawn as stated** — it holds warm, fails cold, and the failure is in stage 1, which D44 never touched |
-| **D43** word-level NRMS | built, tested (it learns a token-only planted signal), running |
+| **D43b** word-level NRMS | **complete** (20.2 h). D39's substitution **cost nothing** on test (0.6129 vs 0.6146/0.6180) — but the MIND time term flips from no-effect to **+0.0032 [0.0018, 0.0045]** under the paper's encoder |
+| **D42d** retrieved regime | rack features **inflate** there (AUC 0.9222) via a **112x** exposure artefact — a cautionary measurement, not a result |
 | Tests | 326 → **354**, green |
 
-**In flight:** the word-level NRMS run (2 arms, MIND, ~16.6 h, started 2026-09-20 ~22:10).
-Log at `data/logs/nrms_word.log`; per-epoch checkpoints in `data/processed/checkpoints/`.
-**It resumes** — rerun the same command and it continues from the last completed epoch.
+**Nothing is in flight.** All extension-week compute is finished and committed.
+
+**Three corrections were made to claims already stated**, and they are the most quotable
+thing this week produced: the serving SLA (held warm, failed cold), the word-level encoder
+(+0.0198 on validation, lost on test), and D42c's prediction (rack features degrade on a
+changed reference set — they inflate). Each is logged where it was originally claimed.
 
 **Needs Chaitanya, nothing else does:** whether to re-score and resubmit to Codabench. The
 offline gains are large (+0.0223 / +0.0202) and the harness has previously transferred
@@ -32,8 +36,16 @@ MIND's *delta* (predicted +0.0151, delivered +0.0154) and EB-NeRD's *level* (0.0
 so ~0.640 and ~0.760 are plausible. Costs ~4–5 h of scoring plus his account to submit, and
 CLAUDE.md §4 is explicit that grading is never on leaderboard rank.
 
-**The report is still the only thing that changes the grade.** See the authorship condition
-below; the teaching owed before he writes is listed in `LEARNING.md` under 2026-09-20.
+**THE REPORT IS NOW THE ONLY THING LEFT, AND THE DEADLINE IS 26 SEPTEMBER.** As of
+2026-09-23 it is not started. `reports/report_prep.md` holds the Q6 requirements, every
+figure with its provenance, the questions to answer in his own words, and the claims not to
+make — it deliberately contains no prose to paste. The comprehension checks owed before he
+writes are in `LEARNING.md` (2026-09-20, Concepts 1–5, and 2026-09-23, Concepts 6–7); R1's
+step 3 was deferred, not cancelled, because he was sitting examinations.
+
+**Suggested order for the writing session:** recall checks first (they are also viva prep),
+then one section at a time — he answers the questions aloud, Claude checks each claim against
+`NUMBERS.md` and flags anything unsupported, then he writes it.
 
 ---
 
