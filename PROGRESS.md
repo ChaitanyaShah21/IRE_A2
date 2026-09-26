@@ -23,7 +23,7 @@ in `ARCHITECTURE.md` D42–D44b with the alternatives it rejected.
 | **D42d** retrieved regime | rack features **inflate** there (AUC 0.9222) via a **112x** exposure artefact — a cautionary measurement, not a result |
 | Tests | 326 → **354**, green |
 
-**In flight (2026-09-25): D42 resubmission to both leaderboards.** `main` fast-forwarded to the extension-week branch locally (push pending - no GitHub credentials in the agent shell). Re-scored with `lgbm_{ds}_rack.txt` after fixing the score-cache bug (error log, 2026-09-25): `mind_lgbm_rack.zip` (32 min, validated, 90.6% of lines differ from the 20 Sep file) and `ebnerd_lgbm_rack.zip` (192 min, validated, 92.9% differ). **Both uploaded by Chaitanya.** EB-NeRD is scored by a self-hosted worker (`worker-upstream` image in his Codespace, `/codabench/.env`, history line 82) - disclose this per D32. Scores to record here and in `NUMBERS.md` when they land; previous: MIND 0.6181, EB-NeRD 0.7397.
+**D42 resubmission scored (2026-09-26):** MIND **0.6319** (rank 63, was 0.6181 / 69), EB-NeRD **0.7621** (rank 74, was 0.7397 / 77; self-hosted worker, disclose per D32). EB-NeRD matches offline to 0.0008; MIND delivers 62% of its offline delta. Full table: `NUMBERS.md` I.6. `main` push still pending from Chaitanya's terminal.
 
 **Three corrections were made to claims already stated**, and they are the most quotable
 thing this week produced: the serving SLA (held warm, failed cold), the word-level encoder
