@@ -36,6 +36,8 @@ MIND's *delta* (predicted +0.0151, delivered +0.0154) and EB-NeRD's *level* (0.0
 so ~0.640 and ~0.760 are plausible. Costs ~4–5 h of scoring plus his account to submit, and
 CLAUDE.md §4 is explicit that grading is never on leaderboard rank.
 
+**REPORT SUBMITTED 2026-09-26:** `reports/IRE_Assignment_2_report.pdf` (5 pages, written by Chaitanya, claims checked against `NUMBERS.md`). The paragraph below is the pre-submission state.
+
 **THE REPORT IS NOW THE ONLY THING LEFT, AND THE DEADLINE IS 26 SEPTEMBER.** As of
 2026-09-23 it is not started. `reports/report_prep.md` holds the Q6 requirements, every
 figure with its provenance, the questions to answer in his own words, and the claims not to
